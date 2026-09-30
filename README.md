@@ -218,7 +218,7 @@ powershell -ExecutionPolicy Bypass -File .\gs_it_exam_android\build_android.ps1
 两棵树是**逐字节复制**出来的两份副本，共享文件从 Windows 单方向同步到安卓那棵；
 `.gitattributes` 里写了 `* -text`，**禁止 git 改行尾**——被改一次行尾，两棵树的逐字节一致性就没了。
 
-> 仓库里**只放能打出 exe / apk 的源码**。iOS 工程、作者的校验/同步/走查脚本、内部工作文档、
+> 仓库里**只放能打出 exe / apk 的源码**。作者的校验/同步/走查脚本、内部工作文档、
 > 界面截图与教材素材都不入库（见 `.gitignore` 末尾），它们仍在作者本机。
 
 ---
@@ -247,7 +247,6 @@ powershell -ExecutionPolicy Bypass -File .\gs_it_exam_android\build_android.ps1
 
 | 限制 | 说明 |
 |---|---|
-| 没有 iOS 包 | iOS 必须用 macOS + Xcode + 付费开发者账号，Windows 上做不出来；**iOS 工程不随本仓库发布**（同一套代码加一个 `build_ios.sh` 拿到 Mac 上就能打） |
 | Android 只在模拟器验过 | MuMu 模拟器（Android 15）实测竖屏 / 横屏跑通代码、答题、进度刷新；**实体手机与厂商定制系统没验过** |
 | 题库规模小 | 只有 11 个知识点 / 15 道题，覆盖不了整个会考大纲——**第一短板** |
 | 没有图示 | 「理论 + 图示 + 代码示例」里，图示还是空的 |
@@ -314,8 +313,7 @@ without rebuilding, and plugins can be dropped next to the executable.
   `tools/ui_smoke_test.py` (111 checks), `tools/check_plugins.py` — 5 tools × 2 platform trees = 10/10.
 - Sandbox: an AST whitelist plus restricted builtins plus a `python -I -S` subprocess (desktop)
   or in-process tracing (Android). **It is a teaching sandbox, explicitly not a security boundary.**
-- Known limits: no iOS build (needs macOS + Xcode, and the iOS tree is not published); Android is
-  verified on an emulator only; only 11 knowledge points / 15 questions today.
+- Known limits: Android is verified on an emulator only; only 11 knowledge points / 15 questions today.
 - **Licensing**: the *code* is MIT by 王子豪 (Wang Zihao). The *teaching content* was derived from
   《甘肃省信息技术学考指导》, a third-party published study guide whose copyright belongs to its
   publisher — it is included for study purposes and is **not** relicensed by this project.
