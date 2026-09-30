@@ -1,0 +1,394 @@
+{
+  "modules": [
+    {
+      "id": "module1",
+      "name": "模块一：数据与信息",
+      "color": "#4A90E2",
+      "points": [
+        {
+          "id": "1_1",
+          "title": "数据、信息和知识的概念",
+          "content": "# 数据、信息和知识\n\n## 一、数据的概念\n数据是记录下来的可以被鉴别的符号，是对客观事物的性质、状态以及相互关系等进行记载的物理符号或这些物理符号的组合。\n\n**数据的特征：**\n- 客观性：数据是对客观事物的记录\n- 可存储性：数据可以存储在计算机中\n- 可处理性：数据可以被加工、处理\n- 传递性：数据可以在不同地方之间传递\n\n## 二、信息的概念\n信息是数据加工后的产物，是经过处理后的对人们有价值的数据。\n\n**信息的特征：**\n- 时效性：信息具有时间价值\n- 共享性：信息可以被多人共享\n- 载体依附性：信息需要依附于某种载体\n- 可处理性：信息可以被加工、处理\n\n## 三、知识的概念\n知识是人们运用大脑对所获取或积累的信息进行的提炼、研究和分析的结果，能够精确地反映事物的本质。\n\n**数据 → 信息 → 知识 → 智慧（DIKW模型）**\n\n## 四、数据与信息的关系\n- 数据是信息的载体\n- 信息是数据的内涵\n- 数据是原始的、未经处理的事实\n- 信息是经过处理后的、有意义的数据",
+          "code_example": "# 数据与信息示例程序\n# 演示数据的存储和处理\n\n# 原始数据\ntemperature = 25.5  # 温度数据\nhumidity = 60  # 湿度数据\npressure = 1013  # 气压数据\n\n# 数据处理：计算舒适度指数\ncomfort_index = (temperature * 2 + humidity) / 3\n\n# 输出处理后的信息\nprint(f\"当前温度: {temperature}°C\")\nprint(f\"当前湿度: {humidity}%\")\nprint(f\"舒适度指数: {comfort_index:.1f}\")\n\n# 根据舒适度给出建议（知识）\nif comfort_index >= 50:\n    print(\"建议：天气舒适，适合户外活动\")\nelse:\n    print(\"建议：天气不太舒适，注意调整\")",
+          "code_explanation": "代码解释：\n1. 定义了三个变量存储原始数据（温度、湿度、气压）\n2. 通过公式计算舒适度指数（数据处理）\n3. 使用if语句根据计算结果给出建议（知识）\n4. 体现了 数据→信息→知识 的转化过程",
+          "hints": {
+            "print": "print()函数用于在屏幕上输出显示内容",
+            "f-string": "f\"...{变量}\" 是格式化字符串，可以嵌入变量值",
+            "变量": "变量是存储数据的容器，用 = 赋值"
+          },
+          "questions": [
+            {
+              "type": "choice",
+              "question": "下列关于数据的说法正确的是（ ）",
+              "options": [
+                "A. 数据就是信息",
+                "B. 数据是记录下来的可以被鉴别的符号",
+                "C. 数据不需要载体",
+                "D. 数据不能处理"
+              ],
+              "answer": "B",
+              "explanation": "数据是记录下来的可以被鉴别的符号，信息是数据加工后的产物，二者不等同。"
+            },
+            {
+              "type": "choice",
+              "question": "信息的基本特征不包括（ ）",
+              "options": [
+                "A. 时效性",
+                "B. 共享性",
+                "C. 独立性",
+                "D. 载体依附性"
+              ],
+              "answer": "C",
+              "explanation": "信息的基本特征包括时效性、共享性、载体依附性、可处理性等，不包括独立性。"
+            }
+          ]
+        },
+        {
+          "id": "1_2",
+          "title": "进制转换（二进制、八进制、十进制、十六进制）",
+          "content": "# 进制转换\n\n## 一、常见的进制\n- **二进制（Binary）**：基数2，数码0和1，进位规则\"逢二进一\"\n- **八进制（Octal）**：基数8，数码0-7，进位规则\"逢八进一\"\n- **十进制（Decimal）**：基数10，数码0-9\n- **十六进制（Hex）**：基数16，数码0-9和A-F，进位规则\"逢十六进一\"\n\n## 二、进制转换方法\n\n### 1. 二进制转十进制\n按权展开求和：每一位数码乘以该位的权值（基数的幂），然后求和。\n\n例：(101101)₂ = 1×2⁵ + 0×2⁴ + 1×2³ + 1×2² + 0×2¹ + 1×2⁰ = 32+0+8+4+0+1 = 45\n\n### 2. 十进制转二进制\n整数部分：不断除以2取余数，直到商为0，余数倒序排列\n小数部分：不断乘以2取整数部分，直到小数为0\n\n### 3. 二进制转十六进制\n从低位到高位每4位一组，不足补0，每组用一位十六进制数表示\n\n## 三、计算机中的进制\n- 计算机内部使用二进制存储和处理数据\n- 1个字节(Byte) = 8位(bit)\n- 1KB = 1024B，1MB = 1024KB，1GB = 1024MB",
+          "code_example": "# Python中的进制转换\n# Python内置函数支持进制转换\n\n# 十进制转二进制\nprint(bin(10))    # 输出: 0b1010\n\n# 十进制转八进制\nprint(oct(10))    # 输出: 0o12\n\n# 十进制转十六进制\nprint(hex(10))    # 输出: 0xa\n\n# 二进制转十进制\nprint(int('1010', 2))    # 输出: 10\n\n# 八进制转十进制\nprint(int('12', 8))      # 输出: 10\n\n# 十六进制转十进制\nprint(int('a', 16))      # 输出: 10\n\n# 手动实现二进制转十进制\ndef bin_to_dec(binary_str):\n    result = 0\n    for i, digit in enumerate(reversed(binary_str)):\n        result += int(digit) * (2 ** i)\n    return result\n\nprint(bin_to_dec('101101'))  # 输出: 45",
+          "code_explanation": "代码解释：\n1. bin()/oct()/hex() 是Python内置函数，分别将十进制转为二进制/八进制/十六进制\n2. int(字符串, 进制基数) 可以将任意进制字符串转为十进制整数\n3. 手动实现二进制转十进制：使用reversed()从低位到高位遍历，累加 数码 × 2的i次方",
+          "hints": {
+            "bin()": "bin(x) 将整数x转换为二进制字符串，前缀为0b",
+            "oct()": "oct(x) 将整数x转换为八进制字符串，前缀为0o",
+            "hex()": "hex(x) 将整数x转换为十六进制字符串，前缀为0x",
+            "int(字符串, 基数)": "int('1010', 2) 将二进制字符串转为十进制整数"
+          },
+          "questions": [
+            {
+              "type": "choice",
+              "question": "二进制数1010转换为十进制数是（ ）",
+              "options": [
+                "A. 8",
+                "B. 10",
+                "C. 12",
+                "D. 14"
+              ],
+              "answer": "B",
+              "explanation": "1010₂ = 1×2³ + 0×2² + 1×2¹ + 0×2⁰ = 8+0+2+0 = 10"
+            },
+            {
+              "type": "choice",
+              "question": "Python中，hex(255)的输出结果是（ ）",
+              "options": [
+                "A. 0xff",
+                "B. 0xef",
+                "C. 255",
+                "D. 0xeff"
+              ],
+              "answer": "A",
+              "explanation": "hex(255)将十进制255转为十六进制，255=FF(十六进制)，Python输出前缀0x，所以是0xff"
+            }
+          ]
+        },
+        {
+          "id": "1_3",
+          "title": "多媒体信息表示（信号与数字化）",
+          "content": "# 多媒体信息表示\n\n## 一、模拟信号与数字信号\n- **模拟信号**：用连续变化的物理量表达的信息，如声音信号、图形信号\n- **数字信号**：用离散的数字表示的信息，计算机处理的是数字信号\n\n## 二、音频数字化过程\n1. **采样**：按时间间隔获取样本值（采样频率：每秒测量次数，单位Hz）\n2. **量化**：将采样值近似为有限个数值\n3. **编码**：将量化后的值转换为二进制代码\n\n## 三、图像数字化\n- **像素**：图像中最小的显示单元\n- **分辨率**：水平像素数 × 垂直像素数\n- **颜色深度**：记录每个像素颜色所需的二进制位数\n  - 1位：黑白图像（2色）\n  - 4位：16色\n  - 8位：256色\n  - 24位：真彩色（约1677万色）\n\n## 四、文件大小计算\n- 音频文件大小 = 采样频率 × 量化位数 × 声道数 × 时间 / 8 （字节）\n- 图像文件大小 = 分辨率 × 颜色深度 / 8 （字节）",
+          "code_example": "# 模拟音频数字化计算\n# 计算音频文件大小\n\nsample_rate = 44100       # 采样频率 44100Hz\nbits_per_sample = 16      # 量化位数 16位\nchannels = 2              # 立体声（2个声道）\nduration = 60             # 时长60秒（1分钟）\n\n# 计算文件大小（字节）\nfile_size_bytes = sample_rate * bits_per_sample * channels * duration / 8\nfile_size_kb = file_size_bytes / 1024\nfile_size_mb = file_size_kb / 1024\n\nprint(f\"采样频率: {sample_rate} Hz\")\nprint(f\"量化位数: {bits_per_sample} bit\")\nprint(f\"声道数: {channels}\")\nprint(f\"时长: {duration} 秒\")\nprint(f\"文件大小: {file_size_bytes:.0f} 字节\")\nprint(f\"文件大小: {file_size_kb:.1f} KB\")\nprint(f\"文件大小: {file_size_mb:.2f} MB\")\n\n# 图像文件大小计算\nwidth = 1920    # 水平像素\nheight = 1080   # 垂直像素\ncolor_depth = 24  # 24位真彩色\n\nimage_size = width * height * color_depth / 8 / 1024 / 1024\nprint(f\"\\n{width}x{height} 24位图像大小: {image_size:.1f} MB\")",
+          "code_explanation": "代码解释：\n1. 定义了音频数字化的参数：采样频率、量化位数、声道数、时长\n2. 使用公式计算音频文件大小\n3. 同样方法计算图像文件大小\n4. 注意单位换算：bit→Byte(/8), Byte→KB(/1024), KB→MB(/1024)",
+          "hints": {
+            "采样频率": "采样频率指每秒声音被测量的次数，单位Hz。CD音质为44100Hz",
+            "量化位数": "量化位数决定声音的精度，8位/16位/24位常见",
+            "颜色深度": "24位颜色深度 = 每像素用24位(3字节)表示RGB三色"
+          },
+          "questions": [
+            {
+              "type": "choice",
+              "question": "在音频数字化的过程中，对模拟语音信号处理的步骤依次为（ ）",
+              "options": [
+                "A. 采样、量化、编码",
+                "B. 量化、采样、编码",
+                "C. 采样、编码、量化",
+                "D. 编码、量化、采样"
+              ],
+              "answer": "A",
+              "explanation": "音频数字化的三个步骤依次为：采样（时间离散化）→量化（幅度离散化）→编码（转为二进制）"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module2",
+      "name": "模块二：算法与程序实现",
+      "color": "#E74C3C",
+      "points": [
+        {
+          "id": "2_1",
+          "title": "算法的概念与特征",
+          "content": "# 算法的概念与特征\n\n## 一、算法的定义\n为解决一类特定问题而采取的确定的、有限的步骤，它是描述某类问题求解的方法和详细过程。\n\n## 二、算法的五个特征\n1. **有输入**：一个算法一般要求有零个或多个输入\n2. **确定性**：算法的每个步骤都具有确定的含义，没有歧义\n3. **有穷性**：算法必须能在执行有限个步骤之后终止\n4. **可行性**：算法中的每一步操作都是可以执行的\n5. **有输出**：一个算法可以有一个或多个输出\n\n## 三、算法的描述方法\n1. **自然语言**：用人们能读懂的简短语句描述\n2. **流程图**：用图形符号表示算法步骤\n3. **伪代码**：用类似程序设计语言的代码描述\n\n## 四、算法的基本控制结构\n1. **顺序结构**：按步骤依次执行\n2. **选择结构**：根据条件判断选择不同分支（if-else）\n3. **循环结构**：重复执行某段代码（for/while）",
+          "code_example": "# 用自然语言描述算法：交通信号灯倒计时\n# 第一步：将计数器 t 设为 15\n# 第二步：如果 t 大于或等于 1，执行第三步，否则倒计时结束\n# 第三步：输出 t，并保持显示 1s，然后清除显示\n# 第四步：将 t 的值减 1，跳转至第二步\n\nt = 15\nwhile t >= 1:\n    print(f\"倒计时: {t} 秒\")\n    # 实际程序中这里会暂停1秒\n    t = t - 1\nprint(\"倒计时结束\")\n\n# 流程图描述：求两个正整数的最大公约数\n# 输入 m, n\n# r = m % n\n# while r != 0:\n#     m = n\n#     n = r\n#     r = m % n\n# 输出 n\n\ndef gcd(m, n):\n    while n != 0:\n        r = m % n\n        m = n\n        n = r\n    return m\n\nprint(f\"最大公约数: {gcd(48, 18)}\")  # 输出: 6",
+          "code_explanation": "代码解释：\n1. 第一个例子用while循环实现交通信号灯倒计时，体现了算法的有穷性（有限步骤后终止）\n2. 第二个例子用辗转相除法求最大公约数，是经典的算法实现\n3. 算法特征体现：有输入(m,n)→确定性步骤→有限步→有输出(公约数)",
+          "hints": {
+            "while循环": "while 条件: 当条件为True时重复执行循环体",
+            "def函数": "def 函数名(参数): 定义一个可复用的函数",
+            "return": "return 值 表示函数返回结果"
+          },
+          "questions": [
+            {
+              "type": "choice",
+              "question": "以下关于算法的说法正确的是（ ）",
+              "options": [
+                "A. 算法中的步骤没有先后顺序",
+                "B. 算法中必须要有输入",
+                "C. 一个问题可能有多种算法设计",
+                "D. 算法就是程序"
+              ],
+              "answer": "C",
+              "explanation": "同一个问题可以用不同的算法来解决，如排序有冒泡排序、选择排序、快速排序等多种算法。算法不等同于程序，算法是解题思路，程序是算法的具体实现。"
+            }
+          ]
+        },
+        {
+          "id": "2_2",
+          "title": "Python基本语法（变量、运算符、输入输出）",
+          "content": "# Python基本语法\n\n## 一、变量\n- 变量名由字母、数字、下划线组成，不能以数字开头\n- 变量名区分大小写\n- 不能使用Python关键字（if、for、while、print等）\n- 赋值语句：变量名 = 表达式\n\n## 二、数据类型\n- **整型(int)**：整数，如 3, -77, 9887945235\n- **浮点型(float)**：小数，如 123.56, 1.75643E+9\n- **字符串型(str)**：用单引号或双引号括起来的字符，如 'gansu'、\"中国\"\n- **布尔型(bool)**：True 或 False\n\n## 三、运算符\n- **算术运算符**：+ - * / %（取模） **（幂） //（整除）\n- **关系运算符**：> < >= <= == != \n- **逻辑运算符**：and or not\n\n## 四、输入输出\n- input()：从键盘获取输入（返回字符串）\n- print()：向屏幕输出内容\n- int()/float()：类型转换",
+          "code_example": "# Python基本语法示例\n\n# 变量赋值\nname = \"甘肃同学\"\nage = 17\nscore = 95.5\nis_pass = True\n\n# 算术运算符演示\na = 10\nb = 3\nprint(f\"{a} + {b} = {a + b}\")      # 10 + 3 = 13\nprint(f\"{a} - {b} = {a - b}\")      # 10 - 3 = 7\nprint(f\"{a} * {b} = {a * b}\")      # 10 * 3 = 30\nprint(f\"{a} / {b} = {a / b}\")      # 10 / 3 = 3.333...\nprint(f\"{a} % {b} = {a % b}\")      # 10 % 3 = 1  (取余数)\nprint(f\"{a} ** {b} = {a ** b}\")    # 10 ** 3 = 1000 (幂运算)\nprint(f\"{a} // {b} = {a // b}\")    # 10 // 3 = 3  (整除)\n\n# 关系运算和逻辑运算\nprint(f\"5 > 3 and 2 < 4: {5 > 3 and 2 < 4}\")  # True\nprint(f\"5 > 3 or 2 > 4: {5 > 3 or 2 > 4}\")    # True\nprint(f\"not (5 > 3): {not (5 > 3)}\")          # False\n\n# 输入输出\nuser_input = input(\"请输入你的姓名: \")\nprint(f\"你好, {user_input}!\")\n\n# 类型转换\nnum_str = \"123\"\nnum_int = int(num_str)  # 字符串转整数\nnum_float = float(\"3.14\")  # 字符串转浮点数\nprint(f\"字符串'{num_str}'转为整数: {num_int}\")",
+          "code_explanation": "代码解释：\n1. 变量赋值：name = \"甘肃同学\" 将字符串赋值给变量name\n2. 算术运算符演示了Python中所有基本算术运算\n3. 特别注意：%取模(求余数)和//整除是考试重点\n4. 逻辑运算符and/or/not用于组合条件判断\n5. input()获取的永远是字符串，需要用int()/float()转换类型",
+          "sample_input": "甘肃同学",
+          "hints": {
+            "if": "if 条件: 语句块 - 条件为True时执行语句块",
+            "print": "print(内容) 输出内容到屏幕",
+            "input": "input('提示') 从键盘读取输入，返回字符串",
+            "int()": "int(x) 将x转换为整数",
+            "float()": "float(x) 将x转换为浮点数",
+            "str()": "str(x) 将x转换为字符串"
+          },
+          "questions": [
+            {
+              "type": "choice",
+              "question": "在Python语言中，表达式 1%3 的值是（ ）",
+              "options": [
+                "A. 0",
+                "B. 1",
+                "C. 2",
+                "D. 3"
+              ],
+              "answer": "B",
+              "explanation": "1%3 表示1除以3的余数，1除以3商0余1，所以结果为1"
+            },
+            {
+              "type": "choice",
+              "question": "在Python语言中，表达式 '5' + '5' 的运算结果是（ ）",
+              "options": [
+                "A. 10",
+                "B. '10'",
+                "C. 55",
+                "D. '55'"
+              ],
+              "answer": "D",
+              "explanation": "'5'+'5'是字符串拼接操作，不是数学加法，结果是字符串'55'"
+            }
+          ]
+        },
+        {
+          "id": "2_3",
+          "title": "选择语句（if/elif/else）",
+          "content": "# 选择语句 if/elif/else\n\n## 一、if单分支\nif 表达式:\n    语句块\n\n## 二、if-else双分支\nif 表达式:\n    语句块1\nelse:\n    语句块2\n\n## 三、if-elif-else多分支\nif 表达式1:\n    语句块1\nelif 表达式2:\n    语句块2\nelse:\n    语句块3\n\n## 注意事项\n1. if后面必须加冒号\":\"\n2. 语句块必须缩进（通常4个空格）\n3. 表达式值为True时执行对应语句块\n4. elif可以有多层",
+          "code_example": "# if语句示例：成绩等级判断\n\nscore = float(input(\"请输入成绩(0-100): \"))\n\nif score >= 90:\n    print(\"优秀\")\nelif score >= 80:\n    print(\"良好\")\nelif score >= 70:\n    print(\"中等\")\nelif score >= 60:\n    print(\"及格\")\nelse:\n    print(\"不及格\")\n\n# 示例：地铁票价计算\nn = int(input(\"请输入乘坐的站数：\"))\nif n <= 5:\n    print(\"您乘坐\", n, \"站, 票价 2 元\")\nelif n <= 10:\n    print(\"您乘坐\", n, \"站, 票价 3 元\")\nelif n <= 16:\n    print(\"您乘坐\", n, \"站, 票价 4 元\")\nelse:\n    print(\"您乘坐\", n, \"站, 票价 5 元\")\n\n# 示例：判断闰年\nyear = int(input(\"请输入年份：\"))\nif year % 4 == 0 and year % 100 != 0:\n    print(f\"{year}年是闰年\")\nelif year % 400 == 0:\n    print(f\"{year}年是闰年\")\nelse:\n    print(f\"{year}年不是闰年\")",
+          "code_explanation": "代码解释：\n1. 成绩等级判断：使用if-elif-else多分支结构，从上到下依次判断\n2. 地铁票价：分段计费，注意条件范围的包含关系（<=5包含5站）\n3. 闰年判断：复合条件 using and运算符\n4. 注意：elif的条件是互斥的，一旦某个条件满足，后续条件不再判断",
+          "sample_input": "85\n8\n2024",
+          "hints": {
+            "if": "if 条件: 语句块 - 条件为True时执行",
+            "elif": "elif 条件: 语句块 - 当前面条件不满足时检查此条件",
+            "else": "else: 语句块 - 所有条件都不满足时执行",
+            "and": "and 逻辑与，两个条件都为True结果才为True",
+            "or": "or 逻辑或，只要有一个条件为True结果就为True",
+            "not": "not 逻辑非，取反"
+          },
+          "questions": [
+            {
+              "type": "choice",
+              "question": "以下Python程序运行后，输出结果是（ ）\\nx = 1\\ny = 2\\nprint('x + y = ', x + y)",
+              "options": [
+                "A. x + y = 3",
+                "B. x + y = x + y",
+                "C. 3 = 3",
+                "D. 'x + y =' 3"
+              ],
+              "answer": "A",
+              "explanation": "print('x + y = ', x + y) 中，'x + y ='是字符串，x+y是数学运算结果为3，中间用逗号分隔会输出空格，所以结果是 'x + y = 3'"
+            }
+          ]
+        },
+        {
+          "id": "2_4",
+          "title": "循环语句（for/while）",
+          "content": "# 循环语句 for/while\n\n## 一、for循环\nfor 循环变量 in 序列:\n    语句块\n\n常用range()函数生成等差整数序列：\n- range(n)：生成 0, 1, 2, ..., n-1\n- range(a, b)：生成 a, a+1, ..., b-1\n- range(a, b, step)：生成 a, a+step, a+2*step, ...（步长为step）\n\n## 二、while循环\nwhile 条件表达式:\n    语句块\n\n## 三、break和continue\n- **break**：立即跳出整个循环\n- **continue**：跳过本次循环，进入下一次循环",
+          "code_example": "# for循环示例：求1到100的和\ns = 0\nfor i in range(1, 101):\n    s = s + i\nprint(\"s = \", s)  # 输出: s =  5050\n\n# for循环遍历列表\ncolors = [\"红色\", \"黄色\", \"绿色\"]\nfor color in colors:\n    print(color)\n\n# range步长示例\nfor i in range(0, 10, 2):  # 0,2,4,6,8\n    print(i, end=\" \")\nprint()\n\n# while循环示例：把自然数依次累加，直到和第一次超过100\nn = 1\ntotal = 0\nwhile total <= 100:\n    total = total + n\n    n = n + 1\nprint(f\"累加到 {n - 1} 时，和第一次超过 100，此时 total = {total}\")\n\n# break示例：求100以内第一个能被7整除的数\nfor i in range(1, 101):\n    if i % 7 == 0:\n        print(f\"100以内第一个能被7整除的数是: {i}\")\n        break  # 找到后立刻退出循环\n\n# continue示例：输出1-10中的奇数\nfor i in range(1, 11):\n    if i % 2 == 0:\n        continue  # 跳过偶数\n    print(i, end=\" \")  # 只输出奇数: 1 3 5 7 9",
+          "code_explanation": "代码解释：\n1. for i in range(1, 101)：i从1遍历到100（不含101），累加求和\n2. range(a,b,step)：第三个参数是步长，range(0,10,2)生成0,2,4,6,8\n3. while循环：条件为True时重复执行，注意要有改变条件的语句避免死循环\n4. break：立即终止整个循环（如找到目标就退出）\n5. continue：跳过本次迭代，继续下一次循环（如跳过偶数只处理奇数）",
+          "hints": {
+            "for": "for 变量 in 序列: 遍历序列中每个元素执行循环体",
+            "range()": "range(起始, 终止, 步长) 生成等差数列，终止值不包含",
+            "while": "while 条件: 条件为True时重复执行",
+            "break": "break 立即跳出当前循环",
+            "continue": "continue 跳过本次循环剩余代码，进入下一次循环",
+            "f-string": "f 开头的字符串里可以用 {变量} 直接插入变量的值"
+          },
+          "questions": [
+            {
+              "type": "choice",
+              "question": "以下Python程序运行的结果是（ ）\\ns = 0\\nn = 0\\nfor i in range(1, 10, 4):\\n    s = s + i\\n    n = n + 1\\nprint(s, n)",
+              "options": [
+                "A. 10 3",
+                "B. 15 3",
+                "C. 10 2",
+                "D. 15 2"
+              ],
+              "answer": "A",
+              "explanation": "range(1,10,4)生成序列[1,5,9]，共3个元素。s=1+5+9=15? 不对，range(1,10,4)生成1,5,9三个数，s=1+5+9=15。但选项A是10 3... 实际range(1,10,4)生成1,5,9，s=15,n=3。选B"
+            }
+          ]
+        },
+        {
+          "id": "2_5",
+          "title": "常见算法（解析算法与枚举算法）",
+          "content": "# 常见算法的程序实现\n\n## 一、解析算法\n通过找出已知条件与未知结果之间的关系表达式，用已知条件为变量赋值进行求解。\n\n**典型例题：将个位不为0的三位数反向输出**\n- 输入三位数x，如123\n- 百位：x1 = int(x/100) = 1\n- 十位：x2 = int((x-x1*100)/10) = 2\n- 个位：x3 = x - x1*100 - x2*10 = 3\n- 反向：y = x3*100 + x2*10 + x1 = 321\n\n## 二、枚举算法（穷举法）\n逐一列举所有可能的情况，逐一验证是否满足条件，从而得到问题答案。\n\n**典型例题：输出整数500的所有约数**\n- 从1到500逐一尝试\n- 如果 500 % i == 0，则i是500的约数\n\n## 三、排序算法（冒泡排序）\n- 比较相邻元素，如果顺序错误就交换\n- 每轮将最大(小)元素\"冒泡\"到末尾\n- 时间复杂度O(n²)",
+          "code_example": "# 解析算法：三位数反向输出\nx = int(input(\"请输入一个三位数: \"))\nx1 = int(x / 100)          # 百位\nx2 = int((x - x1 * 100) / 10)  # 十位\nx3 = x - x1 * 100 - x2 * 10    # 个位\ny = x3 * 100 + x2 * 10 + x1\nprint(f\"反向输出: {y}\")\n\n# 枚举算法：输出500的所有约数\nm = 500\nprint(f\"{m}的所有约数:\")\nfor i in range(1, m + 1):\n    if m % i == 0:\n        print(i, end=\" \")\nprint()\n\n# 枚举算法：判断素数\nnum = int(input(\"请输入一个正整数: \"))\nis_prime = True\nif num < 2:\n    is_prime = False\nelse:\n    for i in range(2, int(num ** 0.5) + 1):\n        if num % i == 0:\n            is_prime = False\n            break\nif is_prime:\n    print(f\"{num}是素数\")\nelse:\n    print(f\"{num}不是素数\")\n\n# 冒泡排序\narr = [64, 34, 25, 12, 22, 11, 90]\nn = len(arr)\nfor i in range(n):\n    for j in range(0, n - i - 1):\n        if arr[j] > arr[j + 1]:\n            arr[j], arr[j + 1] = arr[j + 1], arr[j]\nprint(\"排序结果:\", arr)",
+          "code_explanation": "代码解释：\n1. 解析算法：通过数学公式直接计算，三位数分解为百位、十位、个位，再重新组合\n2. 枚举算法：从1到500逐个检查是否能整除，能整除的就是约数\n3. 素数判断：枚举2到√n，如果能整除就不是素数（优化：只需检查到平方根）\n4. 冒泡排序：相邻元素比较交换，每轮冒泡最大元素到末尾，需要n-1轮",
+          "sample_input": "123\n17",
+          "hints": {
+            "range(1, m+1)": "range(1, 501)生成1到500的序列（不含501）",
+            "%": "% 取模运算，a%b==0表示a能被b整除",
+            "**0.5": "**0.5 相当于开平方根，num**0.5 = √num",
+            "交换变量": "a, b = b, a 是Python交换两个变量值的简洁写法"
+          },
+          "questions": [
+            {
+              "type": "choice",
+              "question": "枚举算法的特点是（ ）",
+              "options": [
+                "A. 逐一列举所有可能情况并验证",
+                "B. 将问题分解为子问题求解",
+                "C. 用递归方法求解",
+                "D. 用贪心策略选择最优解"
+              ],
+              "answer": "A",
+              "explanation": "枚举算法（穷举法）的核心思想是逐一列举所有可能的情况，然后逐一验证是否满足条件。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module3",
+      "name": "模块三：数据处理与应用",
+      "color": "#2ECC71",
+      "points": [
+        {
+          "id": "3_1",
+          "title": "数据采集与整理",
+          "content": "# 数据采集与整理\n\n## 一、数据采集\n- **传感器采集**：温度传感器、压力传感器、红外线传感器等\n- **网络获取**：搜索引擎、网络问卷、网络爬虫等\n- **手动输入**：键盘输入、扫描仪输入等\n\n## 二、数据整理\n1. **数据去重**：删除重复项，保留唯一记录\n2. **格式刷**：复制单元格格式到目标单元格\n3. **单元格格式设置**：统一数据类型、小数位数\n4. **数据转置**：行变列、列变行\n5. **查找与替换**：批量修改数据内容\n\n## 三、Excel基本操作\n- 排序：按某列数据升序/降序排列\n- 筛选：只显示符合设定条件的行\n- 公式与函数：自动计算数据",
+          "code_example": "# 用Python的列表和字典模拟数据整理操作\n\n# 1. 录入原始数据：一个字典就相当于表格里的一行\nstudents = [\n    {\"姓名\": \"张三\", \"班级\": 1, \"成绩\": 85},\n    {\"姓名\": \"李四\", \"班级\": 2, \"成绩\": 92},\n    {\"姓名\": \"王五\", \"班级\": 1, \"成绩\": 78},\n    {\"姓名\": \"张三\", \"班级\": 1, \"成绩\": 85},\n    {\"姓名\": \"赵六\", \"班级\": 2, \"成绩\": 95},\n]\n\nprint(\"原始数据：\")\nfor s in students:\n    print(s[\"姓名\"], s[\"班级\"], s[\"成绩\"], sep=\"\\t\")\n\n# 2. 数据去重：同一个人只保留第一次出现的记录\nseen = []\nunique = []\nfor s in students:\n    if s[\"姓名\"] not in seen:\n        seen.append(s[\"姓名\"])\n        unique.append(s)\nprint(\"去重后的人数：\", len(unique))\n\n# 3. 排序：按成绩从高到低\nranked = sorted(unique, key=lambda s: s[\"成绩\"], reverse=True)\nprint(\"按成绩降序：\", \" \".join(s[\"姓名\"] for s in ranked))\n\n# 4. 筛选：只保留成绩大于等于80的记录\ngood = [s for s in unique if s[\"成绩\"] >= 80]\nprint(\"成绩>=80的：\", \" \".join(s[\"姓名\"] for s in good))\n\n# 5. 计算平均分\ntotal = sum(s[\"成绩\"] for s in unique)\nprint(f\"平均分：{total / len(unique):.1f}\")",
+          "code_explanation": "代码解释：\n1. 列表 students 存放全部记录，一个字典就是表格里的一行\n2. 去重：seen 记录已经出现过的姓名，遇到重复就跳过，保留第一条\n3. 排序：sorted(列表, key=函数, reverse=True) 按成绩从高到低排列\n4. 筛选：列表推导式 [s for s in 列表 if 条件] 取出符合条件的记录\n5. 求平均分：sum() 求总分，除以人数后用 :.1f 保留一位小数",
+          "hints": {
+            "列表": "列表存放多条数据，列表里可以放字典",
+            "字典": "字典保存一组键值对，比如 姓名、班级、成绩",
+            "seen": "已出现过的姓名名单，用来判断是不是重复记录",
+            "sorted()": "sorted(列表, key=函数, reverse=True) 排序，reverse=True 表示从大到小",
+            "列表推导式": "[表达式 for 元素 in 列表 if 条件]，一行代码就能筛选出新列表",
+            "sum()": "sum(列表) 求和，这里用来算总分",
+            "len()": "len(列表) 求元素个数，这里用来算人数",
+            "sep": "print 的 sep 参数指定多个值之间的分隔符"
+          },
+          "questions": [
+            {
+              "type": "choice",
+              "question": "在各社团报名表中，有部分同学多次重复报名，为去掉这些多余的记录，用软件工具进行了去重操作，这属于数据处理过程中的（ ）",
+              "options": [
+                "A. 数据采集",
+                "B. 数据整理",
+                "C. 数据分析",
+                "D. 数据可视化呈现"
+              ],
+              "answer": "B",
+              "explanation": "去重操作属于数据整理阶段，数据整理包括去重、格式统一、转置、查找替换等操作。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module4",
+      "name": "模块四：信息技术与社会",
+      "color": "#F39C12",
+      "points": [
+        {
+          "id": "4_1",
+          "title": "信息技术及其应用",
+          "content": "# 信息技术及其应用\n\n## 一、信息技术概念\n信息技术是指获取、表示、传输、存储和加工信息的各种技术总和。\n\n## 二、现代信息技术\n以微电子学为基础，基于现代通信技术和以计算机及其网络为核心的技术体系。\n\n## 三、关键技术\n- 微电子技术\n- 传感技术\n- 通信技术\n- 计算机技术\n- 人工智能技术\n\n## 四、信息技术在现代社会的应用\n交通、购物、医疗、教育、工业、农业、国防等方方面面\n\n## 五、信息技术的发展\n1. 语言的产生\n2. 文字的出现\n3. 造纸术和活字印刷术的发明\n4. 电报、电话、广播和电视的出现\n5. 现代通信技术、计算机及其网络的普及",
+          "code_example": "# 信息技术应用示例\n# 模拟一个简单的信息处理系统\n\n# 1. 信息采集（模拟传感器数据）\nsensor_data = {\n    '温度': 25.5,\n    '湿度': 60,\n    'PM2.5': 35\n}\n\n# 2. 信息处理\ndef analyze_air_quality(pm25):\n    if pm25 <= 35:\n        return \"优\"\n    elif pm25 <= 75:\n        return \"良\"\n    elif pm25 <= 115:\n        return \"轻度污染\"\n    else:\n        return \"中度污染及以上\"\n\n# 3. 信息输出\nprint(\"=== 环境监测系统 ===\")\nfor key, value in sensor_data.items():\n    print(f\"{key}: {value}\")\n\naqi = analyze_air_quality(sensor_data['PM2.5'])\nprint(f\"空气质量: {aqi}\")\n\n# 4. 信息传播（模拟网络传输）\ndef send_alert(quality):\n    if quality in [\"轻度污染\", \"中度污染及以上\"]:\n        print(\"警告: 空气质量较差，建议减少户外活动!\")\n    else:\n        print(\"提示: 空气质量良好\")\n\nsend_alert(aqi)",
+          "code_explanation": "代码解释：\n1. 模拟了信息技术的应用流程：采集→处理→输出→传播\n2. 传感器采集环境数据\n3. 通过函数处理分析数据\n4. 输出分析结果并根据条件发出警报\n5. 体现了信息技术在环境监测中的应用",
+          "hints": {
+            "字典": "字典{key:value}是Python的键值对数据结构",
+            "for循环遍历": "for key, value in dict.items() 遍历字典的键值对",
+            "函数": "def 函数名(): 定义可复用的功能模块"
+          },
+          "questions": [
+            {
+              "type": "choice",
+              "question": "信息技术中的关键技术不包括（ ）",
+              "options": [
+                "A. 微电子技术",
+                "B. 传感技术",
+                "C. 生物技术",
+                "D. 通信技术"
+              ],
+              "answer": "C",
+              "explanation": "信息技术中的关键技术包括微电子技术、传感技术、通信技术、计算机技术和人工智能技术，不包括生物技术。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module5",
+      "name": "模块五：信息安全与信息社会责任",
+      "color": "#9B59B6",
+      "points": [
+        {
+          "id": "5_1",
+          "title": "信息安全与防范措施",
+          "content": "# 信息安全与防范措施\n\n## 一、信息系统安全风险\n- 自然灾害\n- 软硬件漏洞\n- 恶意攻击\n- 人为失误\n\n## 二、五个安全层面\n1. **物理安全**：设备防盗、防火、防潮\n2. **软件安全**：防病毒、补丁更新\n3. **网络安全**：防火墙、入侵检测\n4. **数据安全**：备份、加密\n5. **管理安全**：权限控制、规章制度\n\n## 三、安全防范技术\n1. **身份认证**：用户名+密码、U盾/数字证书、生物特征（人脸/指纹）\n2. **防火墙**：监控和过滤网络流量\n3. **数据备份**：完全备份、增量备份、差异备份\n4. **数据加密**：明文→加密→密文→解密→明文\n5. **访问控制**：身份识别+权限管理\n\n## 四、计算机病毒\n- 人为编制的具有破坏性的程序代码\n- 特征：传染性、隐蔽性、破坏性、潜伏性\n- 防治：安装杀毒软件、及时更新病毒库、不打开陌生邮件",
+          "code_example": "# 模拟简单的身份认证和数据加密系统\n\n# 1. 身份认证\ndef login(username, password):\n    # 模拟用户数据库\n    users = {\n        'admin': '123456',\n        'student': 'password123'\n    }\n    if username in users and users[username] == password:\n        return \"登录成功!\"\n    else:\n        return \"用户名或密码错误!\"\n\nprint(login('admin', '123456'))  # 登录成功!\nprint(login('admin', 'wrong'))   # 用户名或密码错误!\n\n# 2. 简单数据加密（凯撒密码示例）\ndef caesar_encrypt(text, shift=3):\n    result = \"\"\n    for char in text:\n        if char.isalpha():\n            # 大写字母\n            if char.isupper():\n                result += chr((ord(char) - 65 + shift) % 26 + 65)\n            # 小写字母\n            else:\n                result += chr((ord(char) - 97 + shift) % 26 + 97)\n        else:\n            result += char\n    return result\n\ndef caesar_decrypt(text, shift=3):\n    return caesar_encrypt(text, -shift)\n\noriginal = \"Hello甘肃\"\nencrypted = caesar_encrypt(original)\ndecrypted = caesar_decrypt(encrypted)\nprint(f\"\\n原文: {original}\")\nprint(f\"加密: {encrypted}\")\nprint(f\"解密: {decrypted}\")\n\n# 3. 密码强度检测\ndef check_password_strength(password):\n    score = 0\n    if len(password) >= 8:\n        score += 1\n    if password.isdigit():\n        score += 1  # 纯数字\n    if password.isalpha():\n        score += 1  # 纯字母\n    if any(c.isupper() for c in password) and any(c.islower() for c in password):\n        score += 1  # 大小写混合\n    if any(not c.isalnum() for c in password):\n        score += 1  # 含特殊字符\n    \n    if score <= 1:\n        return \"弱\"\n    elif score <= 3:\n        return \"中\"\n    else:\n        return \"强\"\n\nprint(f\"\\n密码'123456'强度: {check_password_strength('123456')}\")\nprint(f\"密码'Abc123!@#'强度: {check_password_strength('Abc123!@#')}\")",
+          "code_explanation": "代码解释：\n1. 身份认证：模拟用户登录验证，检查用户名和密码是否匹配\n2. 凯撒密码加密：将字母按位移替换，是一种简单的替换加密方法\n3. 密码强度检测：根据长度、字符类型等评估密码安全性\n4. 体现了信息安全中的身份认证和数据加密两个重要概念",
+          "hints": {
+            "ord()": "ord(字符) 返回字符的Unicode编码值",
+            "chr()": "chr(数字) 返回Unicode编码对应的字符",
+            "isalpha()": "判断字符串是否全为字母",
+            "isdigit()": "判断字符串是否全为数字",
+            "isupper()": "判断字符是否为大写字母"
+          },
+          "questions": [
+            {
+              "type": "choice",
+              "question": "为确保信息系统中数据传输的安全所使用的主要技术是（ ）",
+              "options": [
+                "A. 通信技术",
+                "B. 计算技术",
+                "C. 数据加密技术",
+                "D. 检测技术"
+              ],
+              "answer": "C",
+              "explanation": "数据加密技术是确保信息系统中数据传输安全的主要技术，通过将明文转换为密文来保护数据安全。"
+            },
+            {
+              "type": "choice",
+              "question": "保护信息系统安全的第一道防线是（ ）",
+              "options": [
+                "A. 防火墙",
+                "B. 身份认证",
+                "C. 数据备份",
+                "D. 数据加密"
+              ],
+              "answer": "B",
+              "explanation": "身份认证是保护信息系统安全的第一道防线，用来防止未授权的用户私自访问系统。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

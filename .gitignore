@@ -1,0 +1,29 @@
+# ---- 构建产物：用脚本重新生成，不进版本库 ----
+# Windows：build_windows.ps1    Android：build_android.ps1    成品：完善\打包成品.ps1
+dist/
+dist_onefile/
+build/
+build_onefile/
+*.spec
+完善/成品/
+
+# ---- Python 缓存 ----
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# ---- Flutter / Gradle 中间产物 ----
+.dart_tool/
+
+# ---- 本地存档与临时文件 ----
+# core\local_store.py 把草稿和答题记录存在这里，坏文件会留 .corrupt 档
+.gs_it_exam/
+*.tmp
+*.corrupt
+*.corrupt.*
+
+# ---- 编辑器 / 系统垃圾 ----
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
