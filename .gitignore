@@ -40,3 +40,18 @@ Thumbs.db
 desktop.ini
 .vscode/
 .idea/
+
+
+# ---- 暂不公开：作者要自己完善后再决定放不放 ----
+# 这些不是软件运行必需的，先留在本地；要发布时把下面几行删掉再 git add 即可。
+完善/screenshots/
+资料/
+完善/可行性报告.md
+完善/自检记录.md
+完善/UI评价.md
+完善/构建踩坑记录.md
+完善/交接文档.md
+完善/Step交付清单.md
+完善/本轮修复记录.md
+完善/README.md
+完善/*.log
