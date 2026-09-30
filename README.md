@@ -221,13 +221,12 @@ powershell -ExecutionPolicy Bypass -File .\gs_it_exam_android\build_android.ps1
 │  └─ requirements.txt
 ├─ gs_it_exam_android/                 ← 与主仓库同构的安卓工程（由同步脚本生成）
 ├─ gs_it_exam_ios/                     ← 与主仓库同构的 iOS 工程（同上）
-├─ 完善/                                ← 交接文档 + 走查脚本 + 截图
-│  ├─ 交接文档.md / 可行性报告.md / 本轮修复记录.md / 自检记录.md …
-│  ├─ check_all.ps1 / sync_platforms.ps1 / 走查.ps1
-│  └─ screenshots/
-├─ 资料/                                ← 知识点 JSON 素材（**教材 PDF 不在仓库里**，见第十三节）
+├─ 完善/                                ← 校验与同步脚本 + 面向使用者的说明
+│  ├─ check_all.ps1 / sync_platforms.ps1 / 走查.ps1 / uiwin.ps1
+│  ├─ 使用说明.md / Web部署方案.md
+│  └─ （截图、素材与内部工作文档暂未随仓库发布，见 `.gitignore` 末尾）
 ├─ .github/workflows/ci.yml            ← CI（Windows）
-├─ CONTRIBUTING.md / CHANGELOG.md / 署名与授权声明.md / LICENSE
+├─ CONTRIBUTING.md / CHANGELOG.md / 署名与授权声明.md / NOTICE.md / LICENSE
 └─ README.md
 ```
 
@@ -279,7 +278,7 @@ powershell -ExecutionPolicy Bypass -File .\gs_it_exam_android\build_android.ps1
 - 教学内容放在仓库里是**为了学习与教学用途**（也是为了让老师能直接替换成自己的题库）。
   如果你要再分发、商用或做成公开产品，请**自行确认并处理教材内容的授权**，必要时替换成自己编写的内容
   （只需改 `data/knowledge_points.json`，不用动代码）。
-- **教材原件（`资料\甘肃省信息技术学考指导.pdf`）不入库**：`.gitignore` 已排除 `资料/*.pdf`。
+- **教材原件与素材不入库**：`资料\`（题库 JSON 素材、教材 PDF）已整体排除，见 `.gitignore` 末尾。
   它是出版社公开出版物的扫描件，把它放进公开仓库等于替原出版方做了一次未授权分发，
   这个风险不该由本项目承担。文件仍保留在作者本机，只是不被 git 跟踪。
 - 以上是**如实说明事实**，不是法律意见；有疑问请咨询专业人士。

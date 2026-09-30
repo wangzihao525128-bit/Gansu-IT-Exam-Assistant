@@ -77,7 +77,7 @@ powershell -ExecutionPolicy Bypass -File .\build_android.ps1
 > 构建时用 `tools\strip_apk_signature.py` 去掉 flet 默认的 debug 签名后再签。
 > Dart 层已混淆（`--obfuscate`，符号表在 `D:\gs_it_exam_symbols`）。
 > **已在 MuMu 模拟器（Android 15）实测**：横竖屏、跑代码、答题、进度卡刷新全部通过。
-> 完整攻克过程见 `..\完善\可行性报告.md` 第四节。
+> 完整攻克过程见 `..\提交历史` 第四节。
 >
 > **为什么不能直接 `flet build apk`**：
 > flet 默认从 GitHub 拉 `flet-build-template`，本机不通 github.com；
