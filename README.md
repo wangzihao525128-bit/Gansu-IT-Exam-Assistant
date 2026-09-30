@@ -78,14 +78,17 @@
 | **Windows 绿色版**（整个文件夹） | 214.4 MB | 机房 / 教室电脑，**推荐** | 解压后双击 `GansuITExam.exe`；**必须整个文件夹一起拷**，不能只拷 exe |
 | **Windows 绿色版 zip** | 93.7 MB | 用微信 / U 盘传给学生 | 解压即用，同上 |
 | **Windows 单文件版**（单个 exe） | 121.2 MB | 图省事、只发一个文件 | 双击即用。每次启动要解包到 `%TEMP%`，启动约 3.3 秒（绿色版约 0.8 秒） |
-| **Android APK** | 64.5 MB | 学生手机 | 传到手机点安装，需允许「未知来源应用」；要求 Android 7.0+ |
+| **Android APK** | 61.9 MB | 学生手机 | 传到手机点安装，需允许「未知来源应用」；要求 Android 7.0+。**签名换过，装过更早版本的请先卸载** |
 
 三种 Windows 产物都**内置 CPython 3.11**，目标电脑**不用装 Python、不用联网**。
 APK 内置 CPython 3.11.6，跑代码完全在本机，同样不用联网。
 
 注意事项：
 
-- v1.0 的 APK 用的是 **debug 证书**：能直接安装，**不能上应用商店**。
+- v1.0 的 APK 用**作者本人的密钥签名**（`apksigner verify --print-certs` 可见 `CN=王子豪`），
+  已经是可以上架的正规签名；换签名后装过旧包的设备要先卸载再装。
+- 应用内有三处署名（左上角 `✍ 王子豪`、右下角 AI 协助声明、窗口标题），
+  并有签名自检：署名被改动会显示「本软件已被修改」并回退到原作者名。详见 `署名与授权声明.md`。
 - 学习进度存在本机（Windows：`%USERPROFILE%\.gs_it_exam\userdata.json`），**换设备不会同步**，这是本机记录。
 - 想清空进度：删掉上面那个文件即可。
 
@@ -95,16 +98,13 @@ APK 内置 CPython 3.11.6，跑代码完全在本机，同样不用联网。
 
 ```powershell
 cd gs_it_exam_windows
-python -m pip install -r requirements.txt      # flet==0.23.0 + pyinstaller>=6.6
+python -m pip install -r requirements.txt      # flet==0.23.0（+ 打包用的 pyinstaller / Pillow）
 python main.py
 ```
 
 - Python **3.11** 已验证（代码里的最低要求是 3.8，见 `core/code_executor.py` 的 `MIN_PYTHON`）。
-- `requirements.txt` 里**没有 Pillow**，但打包 exe 需要它（`tools/build_exe.py` 用它生成图标）：
-
-  ```powershell
-  python -m pip install pillow
-  ```
+- `requirements.txt` 里 `flet` 是运行必需，`pyinstaller` 与 `Pillow` 只在**重新打包 exe** 时用到
+  （`tools/build_exe.py` 用 Pillow 生成图标）。只跑源码不需要后两个。
 
 - 网页版（老师在服务端跑，学生手机浏览器当显示器）：
 

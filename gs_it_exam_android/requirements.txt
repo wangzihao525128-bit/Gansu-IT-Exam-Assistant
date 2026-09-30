@@ -1,2 +1,8 @@
+# 运行软件本身只需要 flet
 flet==0.23.0
+
+# 下面两个只有「重新打包」才用得到：
+# pyinstaller 打 Windows 的 exe；
+# Pillow 被 tools\build_exe.py 用来把 icon.png 转成 ico（缺了会在打包最后一步报错）
 pyinstaller>=6.6
+Pillow>=10.0

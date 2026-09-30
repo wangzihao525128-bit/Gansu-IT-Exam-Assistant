@@ -70,11 +70,13 @@ powershell -ExecutionPolicy Bypass -File .\build_android.ps1
 也可以用 `flet build appbundle` 产出上架 Google Play 用的 `.aab`。
 
 > **当前状态：APK 已产出并验证完成。**
-> 产物：`..\完善\apk\甘肃省信息技术会考学习-v1.0.0.apk`（89 MB）。
+> 产物：`..\完善\成品\甘肃省信息技术会考学习软件-Android.apk`（61.9 MB）。
 > 已拆包核对：应用名、minSdk 24 / targetSdk 34、ABI 覆盖 arm64-v8a + armeabi-v7a、
-> 内置 Python 3.11 运行时、Pyodide 离线包、2401 个 Python 依赖。
-> 签名为 debug 证书（可安装，不能上应用商店）。
-> 本机无真机也无模拟器，**未实机安装验证**。
+> 内置 Python 3.11 运行时、2401 个 Python 依赖。
+> 签名：**作者本人密钥**（`apksigner verify --print-certs` 可见 `CN=王子豪`），
+> 构建时用 `tools\strip_apk_signature.py` 去掉 flet 默认的 debug 签名后再签。
+> Dart 层已混淆（`--obfuscate`，符号表在 `D:\gs_it_exam_symbols`）。
+> **已在 MuMu 模拟器（Android 15）实测**：横竖屏、跑代码、答题、进度卡刷新全部通过。
 > 完整攻克过程见 `..\完善\可行性报告.md` 第四节。
 >
 > **为什么不能直接 `flet build apk`**：
