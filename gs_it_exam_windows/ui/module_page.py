@@ -13,7 +13,7 @@ from __future__ import annotations
 import flet as ft
 
 from core import knowledge_store as store
-from ui import theme
+from ui import branding, theme
 
 
 def module_route(module_id: str) -> str:
@@ -176,6 +176,7 @@ def build_module_page(page: ft.Page, module_id: str) -> None:
         content=ft.Row(
             [
                 back_button(page),
+                branding.author_chip(),
                 ft.Text(module.get("name", ""), size=17, weight=ft.FontWeight.BOLD, color="#FFFFFF", expand=True),
                 ft.Text(f"{len(points)} 知识点", size=12, color="#FFFFFF"),
             ],

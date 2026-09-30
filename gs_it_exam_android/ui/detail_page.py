@@ -17,7 +17,7 @@ import flet as ft
 from core import code_executor
 from core import knowledge_store as store
 from core import plugins
-from ui import page_compat, theme
+from ui import branding, page_compat, theme
 from ui.components.code_editor import (
     NARROW_CODE_PX,
     RESULT_BOX_PX_MOBILE_WIDE,
@@ -100,6 +100,7 @@ def _top_bar(page: ft.Page, module: dict, point: dict) -> ft.Container:
                     ink=True,
                     padding=ft.padding.symmetric(horizontal=10, vertical=6),
                 ),
+                branding.author_chip(),
                 ft.Text(
                     point.get("title", ""),
                     size=16,
@@ -373,7 +374,8 @@ def _not_found(page: ft.Page, module_id: str, point_id: str) -> None:
                         on_click=lambda _event: page.go(module_route(module_id)),
                         ink=True,
                         padding=ft.padding.symmetric(horizontal=10, vertical=6),
-                    )
+                    ),
+                    branding.author_chip(),
                 ],
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
             ),

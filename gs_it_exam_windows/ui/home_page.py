@@ -9,7 +9,7 @@ from __future__ import annotations
 import flet as ft
 
 from core import knowledge_store
-from ui import page_compat, theme
+from ui import branding, page_compat, theme
 from ui.module_page import module_route
 from ui.progress_panel import overall_panel
 
@@ -173,6 +173,7 @@ def build_home(page: ft.Page) -> None:
         content=ft.Row(
             [
                 ft.Text("🎓  甘肃省信息技术会考学习", size=18, weight=ft.FontWeight.BOLD, color="#FFFFFF"),
+                branding.author_chip(),
                 ft.Container(expand=True),
                 theme_button,
             ],

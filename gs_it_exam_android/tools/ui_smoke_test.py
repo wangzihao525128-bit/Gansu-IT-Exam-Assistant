@@ -26,7 +26,7 @@ import main as app  # noqa: E402
 from core import knowledge_store as store  # noqa: E402
 from core import local_store  # noqa: E402
 from core import plugins  # noqa: E402
-from ui import page_compat, theme  # noqa: E402
+from ui import branding, page_compat, theme  # noqa: E402
 from ui.components import code_editor as ce  # noqa: E402
 from ui.components.code_editor import fits as ce_fits, join_spans  # noqa: E402
 
@@ -89,6 +89,9 @@ class FakePage:
         self.data = None
         self.history: list[str] = []
         self.controls: list[ft.Control] = []
+        # page.overlay 是真的 flet Page 上做浮层的那个列表；右下角 AI 水印挂在它里面。
+        # 注意：真的 Page.clean() 只清 controls、不清 overlay，这里保持一致。
+        self.overlay: list[ft.Control] = []
         self.update_count = 0
 
     def go(self, route: str) -> None:
@@ -249,6 +252,17 @@ def main_test() -> int:
     check("首页有备考建议卡", any_text_contains(page, "备考建议"), True)
     check("首页有学习进度卡", any_text_contains(page, "学习进度"), True)
     check("学习进度卡显示总题数", any_text_contains(page, f"0 / {store.stats()['questions']} 题"), True)
+
+    # 署名与水印（ui/branding.py）：
+    #   左上角署名在顶栏里（不是浮层——浮层会压住详情页的「← 返回」按钮）；
+    #   右下角 AI 声明走 page.overlay，不占布局高度。
+    check("首页顶栏有作者署名", any_text_contains(page, f"✍ {branding.AUTHOR}"), True)
+    check("右下角 AI 水印已挂到 overlay", any_text_contains_on(page.overlay, branding.AI_NOTE), True)
+    check("水印在 overlay 里只挂一份", len(page.overlay), 1)
+    # 切页后 Page.clean() 不清 overlay，不该越积越多
+    page.go("/module/module1")
+    page.go("/")
+    check("切页后水印没有重复挂", len(page.overlay), 1)
     # 回归：点「返回首页」不该把用户调好的窗口拉回 1180x800。
     # 以前 home_page.py 无条件每次都设，于是学生把窗口最大化后点一下返回，
     # 窗口就被强行缩回去，正在看的代码被挤掉。之前在文档里当"已知取舍"写过——

@@ -20,7 +20,7 @@ import flet as ft
 from core import knowledge_store
 from core import local_store
 from core import plugins
-from ui import motion, theme
+from ui import branding, motion, theme
 from ui.detail_page import build_detail_page
 from ui.home_page import build_home
 from ui.module_page import build_module_page, module_route
@@ -35,6 +35,10 @@ def route_change(page: ft.Page, route: str) -> None:
     # 不补这一笔，学生「敲两下就切走」时最后那几行代码就白写了。
     local_store.flush_pending()
     page.clean()
+    # 右下角水印（署名 + AI 协助声明）先挂上再建页：页面自己在构建过程中就会
+    # page.update()（首页的 refresh、详情页的进度卡），挂晚了要等下次刷新才出现。
+    # 它走 page.overlay 浮层，不占布局高度，Page.clean() 也不会清掉它。
+    branding.install(page)
     parts = [part for part in (route or "/").strip("/").split("/") if part]
 
     if not parts:
