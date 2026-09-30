@@ -99,7 +99,20 @@ try {
         $pyodideMoved = $true
         Say "  已临时移出 assets\pyodide（12.8 MB，安卓端用不到）" DarkGray
     }
-    flet build apk --template $template --exclude @exclude
+    # --company / --copyright：把作者信息写进包的应用信息里
+    # --flutter-build-args：Dart 层混淆（--obfuscate 改名；--split-debug-info 把符号表另存）
+    # 写法注意：必须用 `--flutter-build-args=--obfuscate` 这种**等号**形式。
+    # flet 这个参数是 nargs="*"：用空格分隔时 argparse 会把 --obfuscate 当成
+    # flet 自己的参数，直接报 "unrecognized arguments"（实测踩过）。
+    # 符号表目录必须是**纯 ASCII 路径**：本工程在 D:\桌面\... 下，Dart 的快照生成器
+    # 写中文路径会失败（"Unable to write file: ...\build\symbols\app.android-arm.symbols"，
+    # 实测踩过），所以固定放 D:\gs_it_exam_symbols。这个目录要长期留着
+    # （将来还原混淆后的崩溃堆栈靠它），但**不要随安装包发出去**。
+    $symbolsDir = "D:\gs_it_exam_symbols"
+    if (-not (Test-Path $symbolsDir)) { New-Item -ItemType Directory -Force -Path $symbolsDir | Out-Null }
+    flet build apk --template $template --exclude @exclude `
+        --company "王子豪" --copyright "Copyright (C) 2026 王子豪 · MIT 开源，衍生作品请保留署名" `
+        "--flutter-build-args=--obfuscate" "--flutter-build-args=--split-debug-info=$symbolsDir"
     $buildExit = $LASTEXITCODE
 } finally {
     if ($pyodideMoved -and (Test-Path -LiteralPath $pyodideStash)) {
@@ -109,10 +122,48 @@ try {
 }
 if ($buildExit -ne 0) { throw "APK 构建失败" }
 
+# ---- 用作者自己的密钥重新签名（这是 APK 上最实质的一层身份）----
+# flet 默认签的是 Android Debug 证书：谁都能生成、看不出作者是谁、也上不了应用商店。
+# 换成作者本人的密钥之后：
+#   * `apksigner verify --print-certs` 里能看到 CN=作者名，任何人都能核对；
+#   * 没有这份私钥的人伪造不了签名，也不能给这个包名推"官方更新"；
+#   * 密钥库在 签名密钥\ 目录（已加进 .gitignore，**绝不能提交到 GitHub**）。
+$ks = Join-Path (Split-Path -Parent $PSScriptRoot) "签名密钥\gs_it_exam.jks"
+if (-not (Test-Path -LiteralPath $ks)) { $ks = "D:\桌面\工作区\学考\签名密钥\gs_it_exam.jks" }
+$apk = Join-Path $here "build\apk\app-release.apk"
+if (Test-Path -LiteralPath $ks) {
+    Say "==> 用作者密钥重新签名" Cyan
+    $btRoot = "D:\tools\android-sdk\build-tools"
+    $bt = Get-ChildItem $btRoot -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
+    if (-not $bt) { throw "找不到 Android build-tools（zipalign / apksigner）" }
+    $zipalign = Join-Path $bt.FullName "zipalign.exe"
+    $apksigner = Join-Path $bt.FullName "apksigner.bat"
+    $stripped = Join-Path $here "build\apk\app-release-unsigned.apk"
+    $aligned = Join-Path $here "build\apk\app-release-aligned.apk"
+    $signed = Join-Path $here "build\apk\app-release-signed.apk"
+    $storePass = "（口令已作废并移除，请用环境变量 GS_KS_PASS）"
+
+    python tools\strip_apk_signature.py $apk $stripped; if ($LASTEXITCODE -ne 0) { throw "去掉旧签名失败" }
+    & $zipalign -p -f 4 $stripped $aligned;           if ($LASTEXITCODE -ne 0) { throw "zipalign 失败" }
+    & $apksigner sign --ks $ks --ks-key-alias gsitexam --ks-pass "pass:$storePass" --key-pass "pass:$storePass" `
+        --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --out $signed $aligned
+    if ($LASTEXITCODE -ne 0) { throw "签名失败" }
+    Copy-Item -LiteralPath $signed -Destination $apk -Force
+    Remove-Item -LiteralPath $stripped, $aligned, $signed -Force -ErrorAction SilentlyContinue
+    Say "  签名证书：" DarkGray
+    & $apksigner verify --print-certs $apk 2>&1 | Select-String -Pattern 'Signer #1 certificate DN|SHA-256 digest' | Select-Object -First 2 | ForEach-Object { Say ("    " + $_.Line.Trim()) DarkGray }
+} else {
+    Say "==> 没找到签名密钥，APK 仍是 debug 签名（不能上架，也体现不出作者身份）" Yellow
+}
+
 $apk = Join-Path $here "build\apk\app-release.apk"
 Say "==> 完成" Green
 Say "产物：$apk（$([math]::Round((Get-Item $apk).Length/1MB,1)) MB）" Yellow
-Say "签名是 debug 证书，可直接安装，但不能上应用商店" Yellow
-Say "上架前请把 android/app/build.gradle 里的 signingConfigs.debug 换成自己的 keystore" DarkGray
+if (Test-Path -LiteralPath $ks) {
+    Say "签名：作者本人密钥（Certificate DN 里是作者名，见上面的 verify 输出）" Green
+    Say "上架前可换成同一个密钥库的正式 alias；密钥库和口令必须自己备份好，丢了就再也发不了更新" DarkGray
+} else {
+    Say "签名：debug 证书（能装、不能上架，也体现不出作者身份）" Yellow
+}
 
 Pop-Location

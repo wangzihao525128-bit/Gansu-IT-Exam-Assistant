@@ -23,8 +23,11 @@ from pathlib import Path
 APP_NAME = "GansuITExam"
 PRODUCT_NAME = "甘肃省信息技术会考学习软件"
 FILE_DESC = "甘肃省信息技术学业水平考试备考学习软件"
-COMPANY = "甘肃会考学习小组"
-COPYRIGHT = "Copyright (C) 2026"
+# 作者信息直接写进 exe 的版本资源：Windows「文件属性 → 详细信息」里
+# 公司/版权/备注三处都能看到，改名字就得改 exe 资源或重新打包。
+COMPANY = "王子豪"
+COPYRIGHT = "Copyright (C) 2026 王子豪 · 保留所有权利"
+COMMENTS = "作者：王子豪 · 本软件由 AI 协助制作 · MIT 开源（衍生作品需保留署名）"
 PRODUCT_VERSION = "1.0.0"
 FILE_VERSION = "1.0.0.0"
 
@@ -46,7 +49,8 @@ VERSION_TEMPLATE = """VSVersionInfo(
          StringStruct('LegalCopyright', {copyright!r}),
          StringStruct('OriginalFilename', {internal!r}.encode('ascii', 'replace').decode('ascii') + '.exe'),
          StringStruct('ProductName', {product!r}),
-         StringStruct('ProductVersion', {product_version!r})])
+         StringStruct('ProductVersion', {product_version!r}),
+         StringStruct('Comments', {comments!r})])
     ]),
     VarFileInfo([VarStruct('Translation', [2052, 1200])])
   ]
@@ -66,6 +70,7 @@ def write_version_file(dest: Path) -> Path:
         copyright=COPYRIGHT,
         product=PRODUCT_NAME,
         product_version=PRODUCT_VERSION,
+        comments=COMMENTS,
     )
     path = dest / "version_info.txt"
     path.write_text(text, encoding="utf-8")

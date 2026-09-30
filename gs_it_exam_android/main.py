@@ -53,7 +53,8 @@ def route_change(page: ft.Page, route: str) -> None:
 
 
 def main(page: ft.Page) -> None:
-    page.title = APP_TITLE
+    # 窗口/任务栏标题也带作者名：除了界面上那两处，这是第三处跑不掉的署名
+    page.title = branding.window_title(APP_TITLE)
     # 需求文档 Step 9：从首页→模块页→详情页的切换动效，让学生知道自己到了哪里
     page.theme = ft.Theme(page_transitions=motion.page_transition_theme())
     try:
@@ -74,9 +75,18 @@ def main(page: ft.Page) -> None:
     for note in plugins.warnings():
         print(f"[插件] {note}")
 
+    # 启动时打一行身份信息：控制台/日志里也留一份作者与声明
+    print(f"[启动] {branding.startup_banner()}")
+
     # 档案（草稿 + 答题记录）出过事就说一句：写失败、从备份恢复、坏文件留档。
     # 以前这些情况在 local_store 里是 `except: pass`，学生的进度没保存成功而界面一无所知。
     notices: list[str] = []
+    # 署名自检：署名或 AI 声明被动过就把原作者亮出来——
+    # 改名的人得到的不是自己的名字，而是一条「本软件已被修改」。
+    credit_ok, credit_note = branding.verify()
+    if not credit_ok:
+        print(f"[署名] {credit_note}")
+        notices.append(credit_note)
     archive_note = local_store.last_error()
     if archive_note:
         print(f"[存档] {archive_note}")
