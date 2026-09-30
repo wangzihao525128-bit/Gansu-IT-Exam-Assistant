@@ -92,6 +92,20 @@ $exclude = @(
 # 中途失败也不会把源码弄丢。
 $pyodideDir = Join-Path $here "assets\pyodide"
 $pyodideStash = Join-Path $env:TEMP ("gs_pyodide_stash_" + [guid]::NewGuid().ToString("N"))
+
+# 自愈：上一次构建如果被强杀（Ctrl+C / 工具超时 / 关机），源码里的 assets\pyodide
+# 会被留在临时暂存目录里回不来。**本脚本真被这样坑过一次**：源码树悄悄少了 12.8 MB 资源，
+# 直到下次打包才发现。所以开工前先找回来；找不到就明确报错，不许带着缺件打包。
+if (-not (Test-Path -LiteralPath $pyodideDir)) {
+    $leftover = Get-ChildItem $env:TEMP -Directory -Filter "gs_pyodide_stash_*" -ErrorAction SilentlyContinue |
+                Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($leftover) {
+        Move-Item -LiteralPath $leftover.FullName -Destination $pyodideDir -Force
+        Say "  上次构建被中断，已从临时目录找回 assets\pyodide" Yellow
+    } else {
+        throw "assets\pyodide 不见了，临时目录里也没有暂存。先恢复它：git checkout -- gs_it_exam_android/assets/pyodide"
+    }
+}
 $pyodideMoved = $false
 try {
     if (Test-Path -LiteralPath $pyodideDir) {

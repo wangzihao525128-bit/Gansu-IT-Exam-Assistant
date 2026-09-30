@@ -390,6 +390,60 @@ def main_test() -> int:
     check("手机横屏代码区不低于下限", ce.fit_mobile_wide(400, 33, True) >= ce.CODE_MIN_PX_MOBILE_WIDE, True)
     check("手机横屏代码区不超上限", ce.fit_mobile_wide(4000, 200, False) <= ce.CODE_MAX_PX, True)
 
+    # 回归（Win 走查实测）：**矮窗口**也必须走「右栏整列给编辑器」那套。
+    # 614 逻辑像素 = 常见的 1366×768 笔记本开 125% 缩放（注意是逻辑像素，
+    # 屏幕够大不等于放得下）。电脑端三栏的高度预算是
+    # 「编辑器下限 150 + 固定开销 178 + 结果框 88 = 416」，右栏只占可用高度的
+    # 2/3，反推需要逻辑高度 ≈ 748 以上；实测这在 1093x614 下走查失败——
+    # 按钮点到了，但「运行状态那一行没渲染出来」（结果框被挤出卡片）。
+    short_page = FakePage(width=1180.0)
+    short_page.height = 614.0
+    app.main(short_page)
+    short_page.go("/point/module2/2_2")
+    short_editor = short_page.data["editor"]
+    short_sample = store.get_point("2_2")[1]["code_example"]
+    short_lines = len(short_sample.splitlines())
+    short_needs_input = "input(" in short_sample
+    check(
+        "矮窗口走手机横屏那套高度算法",
+        short_editor.fitted_height,
+        ce.fit_mobile_wide(614.0, short_lines, short_needs_input),
+    )
+    check(
+        "矮窗口结果区定高（不会被挤出卡片）",
+        short_editor._result_height,
+        ce.RESULT_BOX_PX_MOBILE_WIDE,
+    )
+    # 矮窗口下把「代码解释」挪到中栏，右栏整列留给代码与运行结果
+    short_row = next(
+        (c for c, _ in walk(short_page.controls) if isinstance(c, ft.Row) and 25 in expand_ratios(c)), None
+    )
+    short_center = short_row.controls[1] if short_row is not None and len(short_row.controls) > 1 else None
+    check(
+        "矮窗口把代码解释挪到中栏",
+        bool(short_center) and any_text_contains_on(short_center, "代码解释"),
+        True,
+    )
+    check("矮窗口里代码区不低于手机横屏下限", short_editor.fitted_height >= ce.CODE_MIN_PX_MOBILE_WIDE, True)
+    check(
+        "矮窗口预算不溢出",
+        short_editor.fitted_height + ce.MOBILE_WIDE_CHROME_PX
+        + (ce.STDIN_EXTRA_PX if short_needs_input else 0)
+        + ce.RESULT_BOX_PX_MOBILE_WIDE
+        <= int((614 - ce.OUTER_CHROME_PX) * ce.MOBILE_WIDE_EDITOR_SHARE) - 28,
+        True,
+    )
+    # 普通高度（768 及以上）仍然走原来的电脑端算法，别把好窗口一起改了
+    tall_page = FakePage(width=1180.0)
+    tall_page.height = 800.0
+    app.main(tall_page)
+    tall_page.go("/point/module2/2_2")
+    check(
+        "普通高度窗口仍用电脑端算法",
+        tall_page.data["editor"].fitted_height,
+        ce.fit_height(tall_page, short_lines, 2 / 3, short_needs_input),
+    )
+
     # 真跑一遍带输入的示例：以前这一步是必失败的
     page.go("/point/module2/2_3")
     editor_in = page.data["editor"]
