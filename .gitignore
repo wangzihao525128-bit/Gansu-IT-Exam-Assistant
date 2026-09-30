@@ -42,16 +42,13 @@ desktop.ini
 .idea/
 
 
-# ---- 暂不公开：作者要自己完善后再决定放不放 ----
-# 这些不是软件运行必需的，先留在本地；要发布时把下面几行删掉再 git add 即可。
-完善/screenshots/
+# ---- 不随仓库发布：作者本机的工作资料与工作脚本 ----
+# 仓库里**只放能打出 exe / apk 的源码**（gs_it_exam_windows/ + gs_it_exam_android/），
+# 下面这些留在本地自用；哪天想公开，把对应那几行删掉再 git add 即可。
 资料/
-完善/可行性报告.md
-完善/自检记录.md
-完善/UI评价.md
-完善/构建踩坑记录.md
-完善/交接文档.md
-完善/Step交付清单.md
-完善/本轮修复记录.md
-完善/README.md
-完善/*.log
+完善/
+gs_it_exam_ios/
+.github/
+CHANGELOG.md
+CONTRIBUTING.md
+NOTICE.md

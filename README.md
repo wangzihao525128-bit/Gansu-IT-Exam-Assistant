@@ -1,6 +1,5 @@
 # 甘肃省信息技术会考学习软件
 
-[![CI](https://github.com/wangzihao525128-bit/Gansu-IT-Exam-Assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/wangzihao525128-bit/Gansu-IT-Exam-Assistant/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **仓库简介**：教中国学生信息技术的学考软件（**仅限甘肃**）。
@@ -8,7 +7,8 @@
 > 教材内容的版权在原出版方手里，本项目无权再授权（见第十三节）。
 
 > 给甘肃高中生复习信息技术会考（学考）用的桌面 / 手机学习软件：**读讲解 → 改代码 → 真跑一遍 → 做题看解析**。
-> 一套 Python 代码（flet 0.23 + Python 3.11）同时出四个平台的包：Windows 桌面、Android APK、iOS、Web。
+> 一套 Python 代码（flet 0.23 + Python 3.11）同时出两种安装包：**Windows 桌面 exe** 与 **Android APK**
+> （同一套代码也能用 `flet run --web` 当网页版跑）。
 > 软件自带内置 Python，**目标电脑和手机都不用装 Python、不用联网**。
 
 ---
@@ -32,7 +32,7 @@
 |---|---|
 | 理论页 | Markdown 讲解，支持标题、列表、代码块、表格 |
 | 代码示例 | 每知识点一段可运行示例，编辑器带语法高亮、行号、回车自动缩进 |
-| 代码运行 | 内置 Python 真跑；桌面走独立子进程（`python -I -S`），Android/iOS 走进程内 embedded 后端 |
+| 代码运行 | 内置 Python 真跑；桌面走独立子进程（`python -I -S`），Android 走进程内 embedded 后端 |
 | 中文报错 | 把 Python 异常翻译成「第几行 + 哪里写错了 + 怎么改」，并附原始报错 |
 | 标准输入 | 示例用到 `input()` 时，界面直接给一行「标准输入」，预填样例数据 |
 | 练习题 | 单选题 + 即时判分 + 解析；答对答错都有明确反馈 |
@@ -63,7 +63,7 @@
 
 ## 四、下载与使用（发给学生用哪个）
 
-> 仓库**不含**构建产物（`.gitignore` 排除了 `dist/`、`dist_onefile/`、`完善/成品/`），
+> 仓库**不含**构建产物（`.gitignore` 排除了 `dist/`、`dist_onefile/`），
 > 需要自己按第七节构建，或从 Releases 页面取打包好的文件。
 
 | 产物 | 体积 | 适合谁 | 怎么用 |
@@ -120,24 +120,15 @@ python tools\ui_smoke_test.py     # 界面冒烟，111 项检查
 python tools\check_plugins.py     # 插件接口 28 条断言（含故意写坏的插件）
 ```
 
-任何一条非零退出即视为失败；CI（`.github/workflows/ci.yml`）就是这么判的。
+任何一条非零退出即视为失败。
 
-三棵树（Windows / Android / iOS）一起跑 + 真机走查：
+**两棵树都要跑**：把上面的 `cd gs_it_exam_windows` 换成 `cd gs_it_exam_android` 再跑一遍，
+两棵树各五项 = 10 项全绿才算过。
 
-```powershell
-cd D:\桌面\工作区\学考
-powershell -ExecutionPolicy Bypass -File .\完善\check_all.ps1                     # 3 平台 × 5 项 = 15 项，上次完整校验 15/15
-powershell -ExecutionPolicy Bypass -File .\完善\走查.ps1                          # 驱动真实 EXE 点一遍 + 布局体检（需先打包）
-powershell -ExecutionPolicy Bypass -File .\完善\走查.ps1 -WinW 1600 -WinH 1000    # 换个大窗口再走一遍
-```
-
-> `check_all.ps1` 开头有两道预检：`python` 是否在 PATH（缺失 exit 99）、所有 `.ps1` 是否带
-> **UTF-8 BOM**（缺失 exit 98）。BOM 那道不是形式主义——被剥掉 BOM 的脚本会被 PowerShell 5.1
-> 按 ANSI 读，中文注释变乱码且报错行号指向无关处。用编辑器改过 `.ps1` 之后请确认它还是「UTF-8 带 BOM」。
-
-`走查.ps1` 会启动**打包好的 EXE**，点击首页 → 模块 → 知识点 → 运行代码，每步比对截图哈希，
-最后做两项体检：**A** 扫结果区像素确认代码真的跑通（绿多红少），**B** 确认结果框没被卡片切掉（≥55px）。
-单测全绿时它仍可能报红——这个项目四次严重的界面问题都不是单测抓到的。
+> 单测全绿**不代表界面没问题**——这个项目四次严重的界面问题都不是单测抓到的。
+> 作者的验收习惯是：打包后**启动真实 exe 点一遍**（首页 → 模块 → 知识点 → 运行代码），
+> 每个窗口尺寸都确认两件事：**A** 结果区真的跑通（扫像素，绿多红少）、**B** 结果框没被卡片切掉（≥55px）。
+> 这套走查脚本留在作者本机，未随仓库发布。
 
 ---
 
@@ -152,9 +143,9 @@ powershell -ExecutionPolicy Bypass -File .\gs_it_exam_windows\build_windows.ps1 
 powershell -ExecutionPolicy Bypass -File .\gs_it_exam_android\build_android.ps1
 ```
 
-- 改完代码**只改 `gs_it_exam_windows\`**（主仓库），再用 `完善\sync_platforms.ps1` 同步到另外两棵树。
-- 改完界面必须跑一次 `完善\走查.ps1`。
-- iOS 需要 macOS + Xcode，`gs_it_exam_ios\build_ios.sh` 已备好，见「已知限制」。
+- 改完代码**只改 `gs_it_exam_windows\`**（主仓库），再把共享文件同步到 `gs_it_exam_android\`
+  （44 个共享文件是逐字节复制的两份副本；作者的同步脚本留在本机，未随仓库发布）。
+- 改完界面必须**驱动打包好的 exe 点一遍**，别只看单测。
 
 ---
 
@@ -209,29 +200,26 @@ powershell -ExecutionPolicy Bypass -File .\gs_it_exam_android\build_android.ps1
 
 ```
 学考/                                  ← 仓库根（本目录）
-├─ gs_it_exam_windows/                 ← 主仓库（唯一真源）
+├─ gs_it_exam_windows/                 ← 主仓库（唯一真源，打 Windows exe）
 │  ├─ main.py                          ← 入口，flet 路由与启动自检
 │  ├─ core/                            ← 代码执行器 / 沙箱安全 / 题库 / 本机存档 / 插件
 │  ├─ ui/                              ← flet 页面与组件（首页、模块页、详情页、编辑器、进度卡、署名）
 │  ├─ data/knowledge_points.json       ← 题库（改这个就换内容）
 │  ├─ plugins/README.md                ← 插件接口说明
 │  ├─ tools/                           ← 五项校验脚本 + 打包脚本 + 期望输出快照
-│  ├─ assets/                          ← 图标等资源
+│  ├─ assets/                          ← 图标与运行资源
 │  ├─ build_windows.ps1 / build_android.ps1
 │  └─ requirements.txt
-├─ gs_it_exam_android/                 ← 与主仓库同构的安卓工程（由同步脚本生成）
-├─ gs_it_exam_ios/                     ← 与主仓库同构的 iOS 工程（同上）
-├─ 完善/                                ← 校验与同步脚本 + 面向使用者的说明
-│  ├─ check_all.ps1 / sync_platforms.ps1 / 走查.ps1 / uiwin.ps1
-│  ├─ 使用说明.md / Web部署方案.md
-│  └─ （截图、素材与内部工作文档暂未随仓库发布，见 `.gitignore` 末尾）
-├─ .github/workflows/ci.yml            ← CI（Windows）
-├─ CONTRIBUTING.md / CHANGELOG.md / 署名与授权声明.md / NOTICE.md / LICENSE
+├─ gs_it_exam_android/                 ← 与主仓库同构的安卓工程（打 APK）
+├─ LICENSE / 署名与授权声明.md
 └─ README.md
 ```
 
-三棵树是**逐字节复制**出来的三份副本，共享文件由 `完善\sync_platforms.ps1` 从 Windows 单方向同步到另外两棵；
-`.gitattributes` 里写了 `* -text`，**禁止 git 改行尾**——被改一次行尾，三棵树的逐字节一致性就没了。
+两棵树是**逐字节复制**出来的两份副本，共享文件从 Windows 单方向同步到安卓那棵；
+`.gitattributes` 里写了 `* -text`，**禁止 git 改行尾**——被改一次行尾，两棵树的逐字节一致性就没了。
+
+> 仓库里**只放能打出 exe / apk 的源码**。iOS 工程、作者的校验/同步/走查脚本、内部工作文档、
+> 界面截图与教材素材都不入库（见 `.gitignore` 末尾），它们仍在作者本机。
 
 ---
 
@@ -244,7 +232,7 @@ powershell -ExecutionPolicy Bypass -File .\gs_it_exam_android\build_android.ps1
 | 静态白名单 | `core/security.py` | AST 扫描：`import os`、`open`、`eval`、`exec`、`__import__`、`subprocess` 等一律拒绝，`getattr(x, "__self__")` 这类字符串形式也拦 |
 | 运行时限制 | `core/security.py` + `core/code_executor.py` | 受限 builtins、`safe_getattr()`（只放行公开属性）、包一层的 `print`，**不把真的内置对象交给学生** |
 | 进程隔离 | 桌面 | 学生代码在独立子进程里跑（`python -I -S`），带超时与输出上限 `MAX_OUTPUT_CHARS = 200_000` |
-| 进程内预算 | Android / iOS | SeriousPython 的 embedded CPython 在进程内执行，用 `sys.settrace` 行数预算 + 墙钟看门狗打断死循环 |
+| 进程内预算 | Android | SeriousPython 的 embedded CPython 在进程内执行，用 `sys.settrace` 行数预算 + 墙钟看门狗打断死循环 |
 
 **必须说清楚的一句**：这是**教学沙箱**，目标是「拦住学生手滑、并告诉他为什么」，**不是安全边界**。
 静态白名单 + 受限 builtins 的组合拦得住课堂上的误用，拦不住铁了心的攻击者；
@@ -259,14 +247,14 @@ powershell -ExecutionPolicy Bypass -File .\gs_it_exam_android\build_android.ps1
 
 | 限制 | 说明 |
 |---|---|
-| iOS 未出包 | 需要 macOS + Xcode + 付费开发者账号，Windows 上做不了；`gs_it_exam_ios\build_ios.sh` 已备好但**没构建过** |
+| 没有 iOS 包 | iOS 必须用 macOS + Xcode + 付费开发者账号，Windows 上做不出来；**iOS 工程不随本仓库发布**（同一套代码加一个 `build_ios.sh` 拿到 Mac 上就能打） |
 | Android 只在模拟器验过 | MuMu 模拟器（Android 15）实测竖屏 / 横屏跑通代码、答题、进度刷新；**实体手机与厂商定制系统没验过** |
 | 题库规模小 | 只有 11 个知识点 / 15 道题，覆盖不了整个会考大纲——**第一短板** |
 | 没有图示 | 「理论 + 图示 + 代码示例」里，图示还是空的 |
 | 没有错题本 | 只看得到正确率，看不到「具体哪几道错了」（数据已存，缺页面） |
 | Web 版代码窗口跑不了 Python | flet 0.23 的 `ft.WebView` 在 web 渲染器下是空平台视图；网页版是「浏览器当显示器、Python 在服务器跑」 |
 | 手机端行号不跟随滚动 | flet 0.23 的布局限制，不是逻辑 bug |
-| 三平台复制粘贴架构 | 44 个共享文件是三份副本 + 人工同步脚本，改一处必须记得同步 |
+| 两棵树复制粘贴架构 | 44 个共享文件是两份副本 + 人工同步，改一处必须记得同步 |
 
 ---
 
@@ -302,7 +290,8 @@ powershell -ExecutionPolicy Bypass -File .\gs_it_exam_android\build_android.ps1
 ```
 代码：MIT License, Copyright (c) 2026 王子豪（Wang Zihao）  → 见 LICENSE
 
-第三方组件（Pyodide 等）与教材内容的授权说明：见 [NOTICE.md](NOTICE.md)。
+第三方组件：内置 CPython（PSF License）、flet / Flutter（Apache-2.0）、PyInstaller、
+SeriousPython、Pyodide（MPL-2.0，相关代码保留但当前安装包内不可达）——均按其自身许可使用。
 内容：版权归《甘肃省信息技术学考指导》原出版方所有，本项目不重新授权
 ```
 
@@ -314,19 +303,19 @@ MIT 只覆盖本仓库的**代码**。它要求的「保留版权声明」指的
 ## English summary
 
 **Gansu IT Exam Study App** — a study/revision app for the Gansu province high-school IT
-proficiency exam (会考). One Python 3.11 + flet 0.23 codebase ships to Windows desktop,
-Android APK, iOS and Web. Students read Markdown theory, edit and actually run Python
+proficiency exam (会考). One Python 3.11 + flet 0.23 codebase ships to Windows desktop (exe)
+and Android (APK), and can also run as a web app. Students read Markdown theory, edit and actually run Python
 examples in a built-in editor, and answer multiple-choice questions with instant grading
 and explanations; progress is stored locally. Content lives in a single JSON file
 (`gs_it_exam_windows/data/knowledge_points.json`) so teachers can swap the question bank
 without rebuilding, and plugins can be dropped next to the executable.
 
 - Tests: `tools/check_data.py`, `tools/test_sandbox.py` (56 cases), `tools/check_examples.py`,
-  `tools/ui_smoke_test.py` (111 checks), `tools/check_plugins.py` — 5 tools × 3 platform trees = 15/15.
+  `tools/ui_smoke_test.py` (111 checks), `tools/check_plugins.py` — 5 tools × 2 platform trees = 10/10.
 - Sandbox: an AST whitelist plus restricted builtins plus a `python -I -S` subprocess (desktop)
-  or in-process tracing (Android/iOS). **It is a teaching sandbox, explicitly not a security boundary.**
-- Known limits: iOS requires macOS + Xcode (script ready, never built); Android is verified on an
-  emulator only; only 11 knowledge points / 15 questions today.
+  or in-process tracing (Android). **It is a teaching sandbox, explicitly not a security boundary.**
+- Known limits: no iOS build (needs macOS + Xcode, and the iOS tree is not published); Android is
+  verified on an emulator only; only 11 knowledge points / 15 questions today.
 - **Licensing**: the *code* is MIT by 王子豪 (Wang Zihao). The *teaching content* was derived from
   《甘肃省信息技术学考指导》, a third-party published study guide whose copyright belongs to its
   publisher — it is included for study purposes and is **not** relicensed by this project.

@@ -70,7 +70,7 @@ powershell -ExecutionPolicy Bypass -File .\build_android.ps1
 也可以用 `flet build appbundle` 产出上架 Google Play 用的 `.aab`。
 
 > **当前状态：APK 已产出并验证完成。**
-> 产物：`..\完善\成品\甘肃省信息技术会考学习软件-Android.apk`（61.9 MB）。
+> 产物：`甘肃省信息技术会考学习软件-Android.apk`（61.9 MB，作者本机打包，成品不随仓库发布）。
 > 已拆包核对：应用名、minSdk 24 / targetSdk 34、ABI 覆盖 arm64-v8a + armeabi-v7a、
 > 内置 Python 3.11 运行时、2401 个 Python 依赖。
 > 签名：**作者本人密钥**（`apksigner verify --print-certs` 可见 `CN=王子豪`），

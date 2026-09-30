@@ -567,7 +567,7 @@ def _run_embedded(code: str, test_inputs: list[str] | None, timeout: float) -> R
 
     之前安卓上这条路是断的：backend 走的是 pyodide，要一个 WebView 里的
     Pyodide，而打包出来的 flet 客户端根本没有 WebView，于是每次点「运行代码」
-    都是干等 30 秒超时，界面上什么反馈都没有（实测截图见 完善/screenshots/安卓）。
+    都是干等 30 秒超时，界面上什么反馈都没有。
     """
     inputs = list(test_inputs or [])
     out_buf = _LimitedBuffer()

@@ -1,8 +1,8 @@
 # 甘肃省信息技术会考学习 · Windows 桌面版
 
 甘肃省普通高中「信息技术学业水平考试」备考软件，本目录是 **Windows 桌面端** 工程，
-同时也是三个平台（Windows / Android / iOS）的**代码主仓库**：
-`main.py`、`core/`、`ui/`、`data/` 在三个目录里保持完全一致，改完这里再同步到手机端。
+同时也是整套代码的**主仓库（唯一真源）**：
+`main.py`、`core/`、`ui/`、`data/` 与 `gs_it_exam_android/` 里保持完全一致，改完这里再同步到手机端。
 
 ## 当前完成度
 
@@ -123,7 +123,7 @@ print(result.as_dict()["error_type"])     # 失败时是 security / timeout / Ze
 报错全部翻译成中文，例如 `ZeroDivisionError` → 「除数不能是 0，检查一下除号后面的数。」，
 同时保留 Python 原始信息方便对照。
 
-**手机端不一样**：Android / iOS / Web 没有 Python 解释器，也开不了子进程，
+**手机端不一样**：Android / Web 没有 Python 解释器，也开不了子进程，
 所以用 `build_pyodide_script()` 生成一段 JS，在 WebView 里交给 Pyodide 0.25 运行，
 再用 `parse_pyodide_result()` 解析回传结果：
 
@@ -174,7 +174,7 @@ powershell -ExecutionPolicy Bypass -File .\build_windows.ps1
 改完本目录后，在工作区根目录执行：
 
 ```powershell
-foreach ($target in 'gs_it_exam_android', 'gs_it_exam_ios') {
+foreach ($target in 'gs_it_exam_android') {
     Copy-Item -Recurse -Force .\gs_it_exam_windows\core, .\gs_it_exam_windows\ui, .\gs_it_exam_windows\data, .\gs_it_exam_windows\tools $target\
     Copy-Item -Force .\gs_it_exam_windows\main.py, .\gs_it_exam_windows\requirements.txt $target\
 }
@@ -187,7 +187,7 @@ foreach ($target in 'gs_it_exam_android', 'gs_it_exam_ios') {
 - Step 4 / 5：模块浏览页、知识点详情页（电脑端 25% / 45% / 30% 三栏，
   手机端改成**整页滚动 + 区块按内容自然高度**——原先按 40/30/30 硬压会把运行结果挤没）。
 - Step 6~8：代码编辑器、练习题卡片、代码提示面板。
-- Step 9 / 10：整合测试、Web 部署、Windows 打包、Android / iOS 发布。
+- Step 9 / 10：整合测试、Web 部署、Windows 打包、Android 发布。
 
 ## 常见问题
 
@@ -205,7 +205,7 @@ foreach ($target in 'gs_it_exam_android', 'gs_it_exam_ios') {
 ## 完善阶段（2026-09-30）
 
 Step 1~10 全部完成后，又做了一轮真机走查式的完善。
-**详细报告在 `..\完善\` 目录**，必读 `可行性报告.md`、`UI评价.md`、`使用说明.md`。
+**这一轮的详细报告（可行性报告 / UI 评价 / 使用说明 / 自检记录 / 构建踩坑记录等）留在作者本机，未随仓库发布。**
 
 ### 交付状态
 
@@ -214,7 +214,7 @@ Step 1~10 全部完成后，又做了一轮真机走查式的完善。
 | Windows EXE（内置 Python 3.11.7） | ✅ 已打包并实测跑通代码 |
 | 手机端跑代码（Web + Pyodide） | ✅ 真浏览器验证，4 类任务全过 |
 | Android APK | ⚠️ 工具链已备齐，见 仓库提交历史 第四节 |
-| iOS IPA | ❌ Windows 上不可能，必须 macOS + Xcode |
+| iOS IPA | ❌ Windows 上不可能，必须 macOS + Xcode（iOS 工程不随本仓库发布） |
 
 ### 这一轮新增的东西
 
@@ -224,7 +224,7 @@ Step 1~10 全部完成后，又做了一轮真机走查式的完善。
   flet 0.23 没有 `page.run_js`，只能靠 127.0.0.1 小服务把代码送进 WebView
 - `assets/pyodide/package/`（12.2 MB）—— 离线 Pyodide，
   jsdelivr 在国内不通，改从 npm 下，**断网也能跑代码**
-- `完善/` —— 可行性报告、UI 评价、使用说明、13+ 张真机截图
+- 作者本机的 `完善/` —— 可行性报告、UI 评价、使用说明、13+ 张真机截图（未随仓库发布）
 
 ### `requirements.txt` 里为什么没有注释
 
@@ -261,4 +261,4 @@ ERROR: Invalid requirement: '# 甘肃省信息技术会考学习软件 —— Py
 
 ### 质量现状
 
-`完善\check_all.ps1`：三平台 × 4 项检查 = **12/12 全绿，失败 0**。
+作者本机的 `完善\check_all.ps1`：每棵树 × 4 项检查 = **全绿，失败 0**（脚本留在本机，未随仓库发布）。

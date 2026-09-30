@@ -126,7 +126,7 @@ def window_title(base: str) -> str:
 
 
 def startup_banner() -> str:
-    """启动时打一行到控制台（也是三棵树一致性检查用的身份标识）。"""
+    """启动时打一行到控制台（也是两棵树一致性检查用的身份标识）。"""
     return f"{note_text()} · 作者：{author_text()} · {VERSION}"
 
 
