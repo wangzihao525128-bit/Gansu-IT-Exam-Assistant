@@ -1,9 +1,11 @@
 # 甘肃省信息技术会考学习软件
 
-[![CI](https://github.com/wangzihao/REPO_NAME/actions/workflows/ci.yml/badge.svg)](https://github.com/wangzihao/REPO_NAME/actions/workflows/ci.yml)
+[![CI](https://github.com/wangzihao525128-bit/gs-it-exam/actions/workflows/ci.yml/badge.svg)](https://github.com/wangzihao525128-bit/gs-it-exam/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-<!-- 发布前把上面徽章地址里的 REPO_NAME 换成真实仓库名（owner 为 wangzihao） -->
+> **仓库简介**：教中国学生信息技术的学考软件（**仅限甘肃**）。
+> 代码与文档以 MIT 公开，**是为了给作者的创作过程留下公开、可复核的时间戳保护作者的版权**；
+> 教材内容的版权在原出版方手里，本项目无权再授权（见第十三节）。
 
 > 给甘肃高中生复习信息技术会考（学考）用的桌面 / 手机学习软件：**读讲解 → 改代码 → 真跑一遍 → 做题看解析**。
 > 一套 Python 代码（flet 0.23 + Python 3.11）同时出四个平台的包：Windows 桌面、Android APK、iOS、Web。
@@ -232,7 +234,7 @@ powershell -ExecutionPolicy Bypass -File .\gs_it_exam_android\build_android.ps1
 │  ├─ 交接文档.md / 可行性报告.md / 本轮修复记录.md / 自检记录.md …
 │  ├─ check_all.ps1 / sync_platforms.ps1 / 走查.ps1
 │  └─ screenshots/
-├─ 资料/                                ← 教材原始素材
+├─ 资料/                                ← 知识点 JSON 素材（**教材 PDF 不在仓库里**，见第十三节）
 ├─ .github/workflows/ci.yml            ← CI（Windows）
 ├─ CONTRIBUTING.md / CHANGELOG.md / 署名与授权声明.md / LICENSE
 └─ README.md
@@ -286,6 +288,9 @@ powershell -ExecutionPolicy Bypass -File .\gs_it_exam_android\build_android.ps1
 - 教学内容放在仓库里是**为了学习与教学用途**（也是为了让老师能直接替换成自己的题库）。
   如果你要再分发、商用或做成公开产品，请**自行确认并处理教材内容的授权**，必要时替换成自己编写的内容
   （只需改 `data/knowledge_points.json`，不用动代码）。
+- **教材原件（`资料\甘肃省信息技术学考指导.pdf`）不入库**：`.gitignore` 已排除 `资料/*.pdf`。
+  它是出版社公开出版物的扫描件，把它放进公开仓库等于替原出版方做了一次未授权分发，
+  这个风险不该由本项目承担。文件仍保留在作者本机，只是不被 git 跟踪。
 - 以上是**如实说明事实**，不是法律意见；有疑问请咨询专业人士。
 
 ---
