@@ -311,6 +311,8 @@ powershell -ExecutionPolicy Bypass -File .\gs_it_exam_android\build_android.ps1
 
 ```
 代码：MIT License, Copyright (c) 2026 王子豪（Wang Zihao）  → 见 LICENSE
+
+第三方组件（Pyodide 等）与教材内容的授权说明：见 [NOTICE.md](NOTICE.md)。
 内容：版权归《甘肃省信息技术学考指导》原出版方所有，本项目不重新授权
 ```
 
