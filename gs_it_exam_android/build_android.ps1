@@ -159,7 +159,15 @@ if (Test-Path -LiteralPath $ks) {
     $stripped = Join-Path $here "build\apk\app-release-unsigned.apk"
     $aligned = Join-Path $here "build\apk\app-release-aligned.apk"
     $signed = Join-Path $here "build\apk\app-release-signed.apk"
-    $storePass = "（口令已作废并移除，请用环境变量 GS_KS_PASS）"
+    # 口令**不写在脚本里**（这个脚本会进公开仓库，写死了等于把口令发给所有人）：
+    #   1) 环境变量 GS_KS_PASS；2) 或者 签名密钥\keystore.pass（已 gitignore，永不进仓库）
+    $passFile = Join-Path (Split-Path -Parent $ks) "keystore.pass"
+    $storePass = if ($env:GS_KS_PASS) { $env:GS_KS_PASS }
+                  elseif (Test-Path -LiteralPath $passFile) { (Get-Content -LiteralPath $passFile -Raw).Trim() }
+                  else { $null }
+    if (-not $storePass) {
+        throw "找不到签名密钥口令：请设置环境变量 GS_KS_PASS，或把口令写进 $passFile（该文件已被 .gitignore 排除）"
+    }
 
     python tools\strip_apk_signature.py $apk $stripped; if ($LASTEXITCODE -ne 0) { throw "去掉旧签名失败" }
     & $zipalign -p -f 4 $stripped $aligned;           if ($LASTEXITCODE -ne 0) { throw "zipalign 失败" }
