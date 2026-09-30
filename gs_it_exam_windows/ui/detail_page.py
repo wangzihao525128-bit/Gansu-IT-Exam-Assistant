@@ -34,10 +34,30 @@ from ui.progress_panel import module_panel
 WIDE_BREAKPOINT = 900  # 窄于这个宽度就改成上下堆叠
 WIDE_FLEX = (25, 45, 30)  # 电脑端三栏
 NARROW_FLEX = (40, 30, 30)  # 手机端堆叠
+# 逻辑高度低于这个值就当「矮窗口」，改用手机横屏那套按剩余高度算的布局。
+#
+# 780 是怎么来的：电脑端三栏的高度预算是「编辑器下限 150 + 固定开销 178 +
+# 结果框 88 = 416」，右栏只占可用高度的 2/3，反推逻辑高度需要 ≈ 748 以上——
+# tools\ui_smoke_test.py 里那条 `fits(761)` 就是把 761 当成刚好够用的边界。
+# 但**实测比理论更紧**：窗口高 768（flet 逻辑高度 ≈ 754，要减掉约 14px 窗口边框）
+# 走查就失败了（点得到「运行代码」，但结果框被挤出卡片，界面上什么都没有）。
+# 所以留一点余量取 780：默认窗口 1180×800（逻辑高度 ≈ 786）仍然走原来的电脑端三栏，
+# 而 1366×768 笔记本开 125% 缩放（逻辑高度 ≈ 600）这种就走矮窗口布局。
+SHORT_WINDOW_BREAKPOINT = 780
 
 
 def _is_narrow(page: ft.Page) -> bool:
     return (page.width or 0) < WIDE_BREAKPOINT
+
+
+def _is_short(page: ft.Page) -> bool:
+    """窗口逻辑高度太矮，电脑端三栏那套像素预算放不下。
+
+    注意是**逻辑**高度：系统缩放 125% 时，1366×768 的屏幕只有 614 逻辑像素，
+    所以「屏幕够大」不等于「放得下」。
+    """
+    height = float(getattr(page, "height", 0) or 0)
+    return 0 < height < SHORT_WINDOW_BREAKPOINT
 
 
 def _is_mobile(page: ft.Page) -> bool:
@@ -403,10 +423,15 @@ def _not_found(page: ft.Page, module_id: str, point_id: str) -> None:
 def build_detail_page(page: ft.Page, module_id: str, point_id: str) -> None:
     """知识点详情页：宽屏三栏 25/45/30，窄屏上下堆叠 40/30/30。"""
     narrow = _is_narrow(page)
+    short = _is_short(page)
+    # 布局模式 = 宽窄 + 矮高，两者任一变化都要重建：
+    # 只按宽度记缓存的话，学生把窗口拉矮跨过 700 这条线时页面不会重建，
+    # 结果框就一直卡在被挤出去的位置。
+    layout_mode = (narrow, short)
     cached = getattr(page, "data", None)
-    if isinstance(cached, dict) and cached.get("detail_mode") == narrow and page.controls:
+    if isinstance(cached, dict) and cached.get("detail_mode") == layout_mode and page.controls:
         return  # 布局模式没变，不必重建
-    page.data = {"detail_mode": narrow}
+    page.data = {"detail_mode": layout_mode}
 
     page.clean()
     _apply_theme(page)
@@ -444,10 +469,17 @@ def build_detail_page(page: ft.Page, module_id: str, point_id: str) -> None:
     # 示例代码里有 input() 时，编辑器里会多出「标准输入」一行，高度预算要算进去，
     # 否则那一行会把运行结果挤出卡片——正是之前踩过的那个坑。
     editor_needs_input = "input(" in editor_code
-    # 手机横屏（宽布局）是第三种情况：右栏卡片定高 + 内部滚动，
-    # 代码区必须提前把运行结果的位置让出来，否则结果框被顶到滚动区外面。
-    # 竖屏不锁结果区高度（整页滚动），电脑端用 fit_height 那套。
-    mobile_wide = (not narrow) and _is_mobile(page)
+    # 「右栏整列给编辑器」是第三种情况（手机横屏，以及电脑上的矮窗口）：
+    # 右栏卡片定高 + 内部滚动，代码区必须提前把运行结果的位置让出来，
+    # 否则结果框会被顶到滚动区外面。
+    # 竖屏不锁结果区高度（整页滚动），普通高度的电脑端用 fit_height 那套。
+    #
+    # 矮窗口（_is_short，例如 1366×768 笔记本开 125% 缩放 → 逻辑高度只有约 600）
+    # 必须走这条路：实测那台尺寸下电脑端三栏放不下，
+    # 结果框被挤到卡片滚动区外，学生点「运行代码」只看得见「运行中…」
+    # （窗口高 768 这种逼近临界的情况也一样会失败）。
+    # fit_mobile_wide 是按剩余高度倒推的，矮窗口也不会溢出。
+    mobile_wide = (not narrow) and (_is_mobile(page) or short)
     if mobile_wide:
         editor_height = fit_mobile_wide(
             float(getattr(page, "height", 0) or 0), editor_lines, editor_needs_input
@@ -469,7 +501,7 @@ def build_detail_page(page: ft.Page, module_id: str, point_id: str) -> None:
     hints = HintPanel(point.get("hints"), c, code=editor.code(), page=page)
     editor.on_code_change = hints.set_code
     # 冒烟测试要模拟运行代码和答题，所以把三个组件挂在 page.data 上
-    page.data = {"detail_mode": narrow, "editor": editor, "hints": hints, "quiz": quiz}
+    page.data = {"detail_mode": layout_mode, "editor": editor, "hints": hints, "quiz": quiz}
 
     # 8.4 插件面板：右栏最下面一块，高度按内容走（flex=0），不跟讲解区抢地方
     plugin_body = _plugin_body(page, point, c)
