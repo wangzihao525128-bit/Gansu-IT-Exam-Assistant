@@ -1,6 +1,6 @@
 # 甘肃省信息技术会考学习软件
 
-[![CI](https://github.com/wangzihao525128-bit/gs-it-exam/actions/workflows/ci.yml/badge.svg)](https://github.com/wangzihao525128-bit/gs-it-exam/actions/workflows/ci.yml)
+[![CI](https://github.com/wangzihao525128-bit/Gansu-IT-Exam-Assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/wangzihao525128-bit/Gansu-IT-Exam-Assistant/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **仓库简介**：教中国学生信息技术的学考软件（**仅限甘肃**）。
