@@ -124,7 +124,11 @@ try {
     # （将来还原混淆后的崩溃堆栈靠它），但**不要随安装包发出去**。
     $symbolsDir = "D:\gs_it_exam_symbols"
     if (-not (Test-Path $symbolsDir)) { New-Item -ItemType Directory -Force -Path $symbolsDir | Out-Null }
-    flet build apk --template $template --exclude @exclude `
+# 离线构建注意（本机访问不了 github，缺了下面这个文件构建会卡住几分钟后失败）：
+#   serious_python 打包时先找 %TEMP%\cpython-3.11.6+20231002-x86_64-pc-windows-msvc-shared-install_only.tar.gz，
+#   有就直接解压用，没有才去 github.com 下载。离线补法见《本轮修复记录》第十四节：
+#   用绿色版内置 runtime + 系统 Python 的 pip 打一个同名 tar.gz 放进 %TEMP% 即可。
+        flet build apk --template $template --exclude @exclude `
         --company "王子豪" --copyright "Copyright (C) 2026 王子豪 · MIT 开源，衍生作品请保留署名" `
         "--flutter-build-args=--obfuscate" "--flutter-build-args=--split-debug-info=$symbolsDir"
     $buildExit = $LASTEXITCODE
