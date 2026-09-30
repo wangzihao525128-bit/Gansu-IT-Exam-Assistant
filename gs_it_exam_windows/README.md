@@ -213,7 +213,7 @@ Step 1~10 全部完成后，又做了一轮真机走查式的完善。
 |---|---|
 | Windows EXE（内置 Python 3.11.7） | ✅ 已打包并实测跑通代码 |
 | 手机端跑代码（Web + Pyodide） | ✅ 真浏览器验证，4 类任务全过 |
-| Android APK | ⚠️ 工具链已备齐，见 `提交历史` 第四节 |
+| Android APK | ⚠️ 工具链已备齐，见 仓库提交历史 第四节 |
 | iOS IPA | ❌ Windows 上不可能，必须 macOS + Xcode |
 
 ### 这一轮新增的东西
