@@ -1,4 +1,4 @@
-# Android 打包脚本（一键重建 APK）
+﻿# Android 打包脚本（一键重建 APK）
 #
 #   powershell -ExecutionPolicy Bypass -File .\build_android.ps1
 #
@@ -74,7 +74,7 @@ Say "==> 2/2 打 Gradle 包" Cyan
 $exclude = @(
     "tools", ".pytest_cache", "dist_onefile", "build_onefile",
     "GansuITExam.spec", "requirements.txt", "README.md",
-    "assets/pyodide"
+    "assets/pyodide", "__pycache__"
 )
 flet build apk --template $template --exclude @exclude
 if ($LASTEXITCODE -ne 0) { throw "APK 构建失败" }

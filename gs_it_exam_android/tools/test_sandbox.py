@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -25,6 +26,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core import code_executor as executor  # noqa: E402
+from core import local_store  # noqa: E402
 from core import security  # noqa: E402
 
 
@@ -527,6 +529,171 @@ class TestOnefileRuntimePath(unittest.TestCase):
         self.assertEqual(
             executor._runtime_candidates()[0], Path(r"D:\Python312\python.exe")
         )
+
+
+class TestLocalStoreRoundTrip(unittest.TestCase):
+    """存档往返：真的落盘 → 丢掉内存缓存（等于关掉软件再打开）→ 真的读回来。
+
+    **这条以前完全没有覆盖**：local_store 把草稿和答题记录塞在一个 JSON 里，
+    而读失败、写失败原来都是 `except: pass`，所以「学生的记录到底存下来没有」
+    这件事从来没被验证过——冒烟测试只查内存里的统计数字。
+
+    这里靠 GS_EXAM_DATA_DIR 把存档目录指到临时目录（绿色版和测试本来就是这么用的），
+    不碰学生真实的 .gs_it_exam。
+    """
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp(prefix="gs_store_"))
+        self._old_env = os.environ.get("GS_EXAM_DATA_DIR")
+        os.environ["GS_EXAM_DATA_DIR"] = str(self.tmp)
+        self._forget_memory()
+
+    def tearDown(self) -> None:
+        self._forget_memory()
+        if self._old_env is None:
+            os.environ.pop("GS_EXAM_DATA_DIR", None)
+        else:
+            os.environ["GS_EXAM_DATA_DIR"] = self._old_env
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    @staticmethod
+    def _forget_memory() -> None:
+        """清掉内存缓存与错误状态 = 模拟「重启软件」。
+
+        local_store 是「进程内缓存一次」的设计，所以不重启就永远读内存那份，
+        也就永远测不出磁盘上到底是好是坏。
+        """
+        for name, value in (
+            ("_drafts", None),
+            ("_progress", None),
+            ("_pending_since", None),
+            ("_data_dir_cache", None),
+            ("_load_error", ""),
+            ("_write_error", ""),
+        ):
+            if hasattr(local_store, name):
+                setattr(local_store, name, value)
+
+    def _store_file(self) -> Path:
+        return Path(os.environ["GS_EXAM_DATA_DIR"]) / local_store.FILE_NAME
+
+    def test_draft_survives_restart(self) -> None:
+        local_store.save_draft("1_1", "print('改过的草稿')")
+        self._forget_memory()
+        self.assertEqual(local_store.load_draft("1_1"), "print('改过的草稿')")
+
+    def test_answer_survives_restart(self) -> None:
+        local_store.record_answer("1_1", "q12345678", "B", True)
+        local_store.record_answer("1_1", "q87654321", "A", False)
+        self._forget_memory()
+        self.assertEqual(local_store.quiz_stat("1_1"), {"answered": 2, "correct": 1})
+
+    def test_debounced_save_lands_and_is_pending_until_flushed(self) -> None:
+        local_store.save_draft_soon("2_3", "x = 1")
+        self.assertTrue(local_store.has_pending(), "刚敲完应该有未落盘的改动")
+        self.assertTrue(local_store.flush_pending(), "flush_pending 应该写成功")
+        self.assertFalse(local_store.has_pending())
+        self._forget_memory()
+        self.assertEqual(local_store.load_draft("2_3"), "x = 1")
+
+    def test_saved_file_is_valid_json_with_both_sections(self) -> None:
+        local_store.save_draft("1_1", "a = 1")
+        local_store.record_answer("1_1", "q1", "A", True)
+        data = json.loads(self._store_file().read_text(encoding="utf-8"))
+        self.assertEqual(data["drafts"]["1_1"], "a = 1")
+        self.assertEqual(data["progress"]["1_1"]["q1"]["chosen"], "A")
+
+    def test_corrupt_file_is_recovered_from_backup(self) -> None:
+        """写两次就有 .bak；把主文件写坏，重启后应该从备份恢复，而不是清零。"""
+        local_store.save_draft("1_1", "第一版")
+        local_store.save_draft("1_1", "第二版")  # 第二次落盘前会把上一份存成 .bak
+        self._store_file().write_text('{"drafts": {"1_1": "半截', encoding="utf-8")
+        self._forget_memory()
+        self.assertEqual(local_store.load_draft("1_1"), "第一版", "应该从 .bak 恢复")
+        self.assertTrue(self._store_file().with_name(self._store_file().name + local_store.CORRUPT_SUFFIX).exists(),
+                        "坏文件必须留档，不能留在原地被下次写入顶掉")
+        self.assertIn("损坏", local_store.last_error())
+
+    def test_corrupt_file_without_backup_is_kept_not_silently_lost(self) -> None:
+        """第一份存档就坏了（还没有 .bak）：也不能静默清零，
+        必须留下 .corrupt 现场 + 一句人话。"""
+        self._store_file().write_text("这不是 JSON", encoding="utf-8")
+        self._forget_memory()
+        self.assertEqual(local_store.load_draft("1_1", "默认"), "默认")
+        self.assertTrue(list(self.tmp.glob("*.corrupt*")), "坏文件要留档")
+        self.assertTrue(local_store.last_error(), "要有可显示给学生的说明")
+
+
+@unittest.skipUnless(shutil.which("node"), "本机没有 node，跳过 Pyodide 真实执行测试")
+class TestPyodideRealExecution(unittest.TestCase):
+    """第三个后端（Pyodide）以前**只被字符串断言过**：`assertIn("loadPyodide", script)`。
+
+    也就是说：那段 JS 从来没被执行过。它照样可能整个坏掉（PAYLOAD 拼错、
+    prelude 没生效、stdout 没接管），而 15 项校验依然全绿——
+    这正是「单测验逻辑、走查验体验」的另一面：「验字符串」不等于「验执行」。
+
+    这里用真 Node + 仓库里自带的离线 Pyodide（assets\\pyodide\\package）
+    把 build_pyodide_script() 生成的那段脚本**真的跑一遍**。
+
+    一个实测过的坑：Windows 中文路径 + `file://` URL 混用会让 Pyodide 的
+    模块解析炸掉（报 `Cannot find module 'D:\\...\\file:\\D:\\%E6%A1%8C...'`），
+    所以先把离线包复制到 ASCII 临时目录再跑——测试里这么做，
+    真机 / Web 上路径是英文的，不受影响。
+    """
+
+    def test_generated_script_really_runs_in_node(self) -> None:
+        package = Path(__file__).resolve().parent.parent / "assets" / "pyodide" / "package"
+        if not (package / "pyodide.mjs").exists():
+            self.skipTest("离线 Pyodide 资源不在（assets\\pyodide\\package），跳过")
+
+        tmp = Path(tempfile.mkdtemp(prefix="gs_pyodide_"))
+        try:
+            work_dir = tmp / "pkg"  # ASCII 路径，见类文档里的坑
+            shutil.copytree(package, work_dir)
+
+            # 这段学生代码一次覆盖三件事：中文 input 注入、循环与算术、
+            # 以及多行 print 的 stdout 抓取。
+            code = (
+                'name = input("name:")\n'
+                "total = 0\n"
+                "for i in range(1, 6):\n"
+                "    total += i\n"
+                'print("hello", name)\n'
+                'print("sum:", total)\n'
+            )
+            script_file = tmp / "student_script.js"
+            script_file.write_text(executor.build_pyodide_script(code, ["甘肃同学"]), encoding="utf-8")
+
+            harness = tmp / "harness.mjs"
+            harness.write_text(
+                "import fs from \"node:fs\";\n"
+                "import { pathToFileURL } from \"node:url\";\n"
+                "const dir = process.argv[2], scriptFile = process.argv[3];\n"
+                "const mod = await import(pathToFileURL(dir + \"/pyodide.mjs\").href);\n"
+                "globalThis.loadPyodide = mod.loadPyodide;\n"
+                "const src = fs.readFileSync(scriptFile, \"utf8\").replace(\n"
+                "  /const INDEX_URL = \"[^\"]*\";/,\n"
+                "  'const INDEX_URL = ' + JSON.stringify(dir.replace(/\\\\\\\\/g, \"/\") + \"/\") + ';'\n"
+                ");\n"
+                "const runStudentCode = new Function(src + \"\\nreturn runStudentCode;\")();\n"
+                "process.stdout.write(\"__RESULT__\" + JSON.stringify(await runStudentCode()));\n",
+                encoding="utf-8",
+            )
+
+            completed = subprocess.run(
+                ["node", str(harness), str(work_dir), str(script_file)],
+                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300,
+            )
+            payloads = [part for part in (completed.stdout or "").split("__RESULT__") if part.strip()]
+            self.assertTrue(payloads, f"node 没回结果：stdout={completed.stdout[:200]!r} stderr={completed.stderr[-300:]!r}")
+            data = json.loads(payloads[-1])
+
+            self.assertTrue(data.get("success"), f"Pyodide 里执行失败：{data}")
+            self.assertIn("hello 甘肃同学", data.get("output", ""))
+            self.assertIn("sum: 15", data.get("output", ""))
+            self.assertIn("name:", data.get("output", ""), "prelude 里的 input 提示也要打出来")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
 
 
 if __name__ == "__main__":

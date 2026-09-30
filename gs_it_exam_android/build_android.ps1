@@ -1,4 +1,4 @@
-# Android 打包脚本（一键重建 APK）
+﻿# Android 打包脚本（一键重建 APK）
 #
 #   powershell -ExecutionPolicy Bypass -File .\build_android.ps1
 #
@@ -73,19 +73,41 @@ Say "==> 2/2 打 Gradle 包" Cyan
 # 之前是整个工程目录原样塞进 app.zip：实测成品 APK 的
 # assets\flutter_assets\app\app.zip 里有 2467 个条目，其中带着
 #   tools\（8 项，含 build_exe.pyc）、.pytest_cache\、dist_onefile\、
-#   GansuITExam.spec、requirements.txt、README.md
+#   GansuITExam.spec、requirements.txt、README.md、build_android.ps1
 # —— 这些会跟着安装包一起发到学生手机上，没道理。
-# assets\pyodide（12.8 MB）也排除了：安卓走 embedded（SeriousPython 内置
-# CPython 3.11），backend_for_platform() 永远不会返回 pyodide，
-# 代码仍然都在（core\mobile_runner.py、build_pyodide_script 没删），
-# 只是不往安装包里塞这份跑不到的运行时（见 core\code_executor.py）。
+# 加完这些之后 app.zip 从 26.9 MB 降到 19.2 MB。
 $exclude = @(
     "tools", ".pytest_cache", "dist_onefile", "build_onefile",
     "GansuITExam.spec", "requirements.txt", "README.md",
-    "assets/pyodide"
+    "build_android.ps1", "__pycache__"
 )
-flet build apk --template $template --exclude @exclude
-if ($LASTEXITCODE -ne 0) { throw "APK 构建失败" }
+
+# assets\pyodide（12.8 MB，已经压缩过的 wasm/zip，压缩不了多少）不用发到手机上：
+# 安卓走 embedded（SeriousPython 内置 CPython 3.11），backend_for_platform()
+# 永远不会返回 pyodide，代码仍然都在（core\mobile_runner.py、build_pyodide_script
+# 没删），只是这份离线 Pyodide 在安卓端跑不到（见 core\code_executor.py）。
+# **它不能靠 --exclude 排掉**：flet 的 --exclude 只认工程根目录下的名字，
+# 写 "assets/pyodide" 这种嵌套路径实测不生效（打包结果里那 14 个条目还在）。
+# 所以打包前先把它挪出工程目录，打完再挪回来；用 try/finally 保证一定还原，
+# 中途失败也不会把源码弄丢。
+$pyodideDir = Join-Path $here "assets\pyodide"
+$pyodideStash = Join-Path $env:TEMP ("gs_pyodide_stash_" + [guid]::NewGuid().ToString("N"))
+$pyodideMoved = $false
+try {
+    if (Test-Path -LiteralPath $pyodideDir) {
+        Move-Item -LiteralPath $pyodideDir -Destination $pyodideStash -Force
+        $pyodideMoved = $true
+        Say "  已临时移出 assets\pyodide（12.8 MB，安卓端用不到）" DarkGray
+    }
+    flet build apk --template $template --exclude @exclude
+    $buildExit = $LASTEXITCODE
+} finally {
+    if ($pyodideMoved -and (Test-Path -LiteralPath $pyodideStash)) {
+        Move-Item -LiteralPath $pyodideStash -Destination $pyodideDir -Force
+        Say "  已还原 assets\pyodide" DarkGray
+    }
+}
+if ($buildExit -ne 0) { throw "APK 构建失败" }
 
 $apk = Join-Path $here "build\apk\app-release.apk"
 Say "==> 完成" Green

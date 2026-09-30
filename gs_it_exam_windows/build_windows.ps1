@@ -164,7 +164,12 @@ if ($TrimDeadWeight) {
 
 if (-not $SkipRuntime) {
     Say "==> 5/5 内置 Python 运行时（代码运行窗口要用）" Cyan
-    & pwsh -NoProfile -File "tools\bundle_python.ps1" -Dest $appDir
+    # 用哪个 PowerShell 执行子脚本：优先 pwsh（7.x），没有就退回 powershell（5.1）。
+    # 原来写死 `& pwsh ...`，在只装了 Windows PowerShell 的机器上会直接
+    # 「无法将"pwsh"识别为 cmdlet」，而且是在打包的最后一步炸——
+    # 前面 dist\ 已经生成好了，很容易被误当成「打成功了、只是少了个提示」。
+    $psHost = if (Get-Command pwsh -ErrorAction SilentlyContinue) { "pwsh" } else { "powershell" }
+    & $psHost -NoProfile -ExecutionPolicy Bypass -File "tools\bundle_python.ps1" -Dest $appDir
     if ($LASTEXITCODE -ne 0) { throw "内置 Python 打包失败" }
 } else {
     Say "==> 5/5 跳过内置 Python（-SkipRuntime）" Yellow

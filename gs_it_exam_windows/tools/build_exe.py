@@ -72,6 +72,21 @@ def write_version_file(dest: Path) -> Path:
     return path
 
 
+def find_powershell() -> str:
+    """找一个可用的 PowerShell 来跑 bundle_python.ps1。
+
+    原来这里写死 ``"pwsh"``：只装了 Windows PowerShell（5.1）的机器上会直接
+    抛 ``FileNotFoundError: [WinError 2]``，而且是在**单文件版打包的最后一步**
+    才炸——dist_onefile 里已经有个旧的 exe 躺在那里，很容易被误判成「打成功了」。
+    所以优先 pwsh（7.x），没有就退回 powershell（5.1）。
+    """
+    for candidate in ("pwsh", "powershell"):
+        found = shutil.which(candidate)
+        if found:
+            return found
+    raise RuntimeError("找不到 PowerShell（pwsh / powershell 都没有），无法内置 Python 运行时")
+
+
 def stage_bundle(here: Path, stage: Path) -> Path:
     """把 data / assets / plugins / runtime 摆到一个暂存目录里。
 
@@ -96,7 +111,7 @@ def stage_bundle(here: Path, stage: Path) -> Path:
 
     script = here / "tools" / "bundle_python.ps1"
     subprocess.run(
-        ["pwsh", "-NoProfile", "-File", str(script), "-Dest", str(stage)],
+        [find_powershell(), "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script), "-Dest", str(stage)],
         check=True,
     )
     return stage

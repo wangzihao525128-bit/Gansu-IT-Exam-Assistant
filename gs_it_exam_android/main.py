@@ -70,9 +70,20 @@ def main(page: ft.Page) -> None:
     for note in plugins.warnings():
         print(f"[插件] {note}")
 
+    # 档案（草稿 + 答题记录）出过事就说一句：写失败、从备份恢复、坏文件留档。
+    # 以前这些情况在 local_store 里是 `except: pass`，学生的进度没保存成功而界面一无所知。
+    notices: list[str] = []
+    archive_note = local_store.last_error()
+    if archive_note:
+        print(f"[存档] {archive_note}")
+        notices.append(f"学习记录：{archive_note}")
     if problems:
+        notices.append(f"数据校验发现 {len(problems)} 处问题，例如：{problems[0]}")
+
+    if notices:
+        # 两条合成一条说完：分两次设 snack_bar 的话，后一条会把前一条顶掉。
         page.snack_bar = ft.SnackBar(
-            content=ft.Text(f"数据校验发现 {len(problems)} 处问题，例如：{problems[0]}"),
+            content=ft.Text("；".join(notices), color="#FFFFFF"),
             bgcolor=theme.WARNING,
         )
         page.snack_bar.open = True
