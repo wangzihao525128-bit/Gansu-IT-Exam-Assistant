@@ -24,7 +24,7 @@ gs_it_exam_windows/
 ├── requirements.txt         依赖清单
 ├── build_windows.ps1        打包成 exe 的脚本
 ├── data/
-│   └── knowledge_points.json  知识点数据（6 模块 / 27 知识点 / 130 题）
+│   └── knowledge_points.json  知识点数据（8 模块 / 35 知识点 / 170 题）
 ├── core/
 │   ├── knowledge_store.py   数据读取、内存缓存、搜索、判分工具
 │   ├── security.py          AST 安全沙箱检查（放行 / 拦截规则）
