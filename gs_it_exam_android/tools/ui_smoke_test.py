@@ -28,6 +28,7 @@ from core import local_store  # noqa: E402
 from core import plugins  # noqa: E402
 from ui import branding, page_compat, theme  # noqa: E402
 from ui.components import code_editor as ce  # noqa: E402
+from ui.components import quiz_card as qc  # noqa: E402
 from ui.components.code_editor import fits as ce_fits, join_spans  # noqa: E402
 
 
@@ -509,9 +510,13 @@ def main_test() -> int:
     check("还原示例代码", editor.code(), sample["code_example"])
 
     # 6.4 Step 7：练习题（单选 + 即时判分 + 解析）
+    # 题库里现在混着三种题型，所以先挑出选择题来断言 —— 原来直接取 cards[0]/cards[1]，
+    # 只要在知识点前面插一道填空题就会 AttributeError（FillCard 没有 select）。
     cards = page.data["quiz"].cards
     check("练习题数量", len(cards), len(sample["questions"]))
-    card = cards[0]
+    quiz_cards = [item for item in cards if isinstance(item, qc.QuizCard)]
+    check("知识点里至少有一道选择题", len(quiz_cards) >= 1, True)
+    card = quiz_cards[0]
     card.submit()
     check("没选不能提交", card.submitted, False)
     card.select(card.answer)
@@ -532,8 +537,8 @@ def main_test() -> int:
     check("进度卡显示已练知识点数", any_text_contains(page, f"已练过 {_stat['touched']} / {_stat['points']} 个知识点"), True)
     check("正确率算得对", any_text_contains(page, f"正确率 {_stat['correct'] / _stat['answered'] * 100:.0f}%"), True)
 
-    if len(cards) > 1:
-        other_card = cards[1]
+    other_card = next((item for item in quiz_cards[1:]), None)
+    if other_card is not None:
         wrong_letter = next(letter for letter in other_card.letters() if letter != other_card.answer)
         other_card.select(wrong_letter)
         other_card.submit()
@@ -541,6 +546,74 @@ def main_test() -> int:
         check("答错显示正确答案", any_text_contains_on(other_card.feedback, f"正确答案是 {other_card.answer}"), True)
         other_card.retry()
         check("重做清空选择", (other_card.chosen, other_card.submitted), ("", False))
+
+    # 6.4.3 判断题 / 填空题：两种新题型各跑一遍完整流程。
+    # 用 qc.make_card 直接造卡片 —— 它和 build_quiz_list 内部走的是**同一个工厂**，
+    # 所以这里既验证了工厂的分派规则，又不用往题库里塞测试数据。
+    c = theme.colors()
+
+    judge_q = {
+        "type": "judge",
+        "question": "一个算法必须在执行有限个步骤之后终止。（ ）",
+        "answer": "A",
+        "explanation": "这是算法的**有穷性**。",
+    }
+    judge_card = qc.make_card(page, judge_q, 0, 1, "", c, None)
+    check("判断题也走 QuizCard", isinstance(judge_card, qc.QuizCard), True)
+    check("判断题题型标签", qc.type_label(judge_q), "判断题")
+    check("判断题选项由程序补出字母", judge_card.letters(), ["A", "B"])
+    check("判断题选项文字是正确/错误",
+          [qc.strip_prefix(o) for o in judge_card.options], ["正确", "错误"])
+    judge_card.submit()
+    check("判断题没选不能提交", judge_card.submitted, False)
+    judge_card.select("B")
+    judge_card.submit()
+    check("判断题答错判定", judge_card.correct(), False)
+    check("判断题答错显示「正确/错误」而不是字母 A",
+          any_text_contains_on(judge_card.feedback, "正确答案是 正确（A）"), True)
+    judge_card.retry()
+    check("判断题重做清空选择", (judge_card.chosen, judge_card.submitted), ("", False))
+    judge_card.select("A")
+    judge_card.submit()
+    check("判断题答对判定", judge_card.correct(), True)
+
+    fill_q = {
+        "type": "fill",
+        "question": "把 input() 读回来的字符串转成整数，要调用哪个函数？",
+        "answer": "int",
+        "accept": ["int()"],
+        "explanation": "`int()` 把内容转成整数。",
+    }
+    fill_card = qc.make_card(page, fill_q, 0, 1, "", c, None)
+    check("填空题走 FillCard", isinstance(fill_card, qc.FillCard), True)
+    check("填空题题型标签", qc.type_label(fill_q), "填空题")
+    check("填空题没有选项", fill_card.letters(), [])
+    fill_card.submit()
+    check("填空题空着不能提交", fill_card.submitted, False)
+    fill_card.fill("int")
+    fill_card.submit()
+    check("填空题答对判定", fill_card.correct(), True)
+    check("填空题答对显示解析", any_text_contains_on(fill_card.feedback, "解析"), True)
+    check("填空题提交后输入框禁用", fill_card.field.disabled, True)
+    fill_card.retry()
+    check("填空题重做清空输入",
+          (fill_card.chosen, fill_card.submitted, fill_card.field.value), ("", False, ""))
+    # 全角 + 大小写 + 空格 三种「写对了但格式不同」，都要判对
+    fill_card.fill("  ＩＮＴ（） ")
+    fill_card.submit()
+    check("填空题归一化后判对（全角/大小写/空格）", fill_card.correct(), True)
+    fill_card.retry()
+    fill_card.fill("print")
+    fill_card.submit()
+    check("填空题答错判定", fill_card.correct(), False)
+    check("填空题答错显示标准答案",
+          any_text_contains_on(fill_card.feedback, "标准答案是 int"), True)
+    check("填空题列出其它可接受写法",
+          any_text_contains_on(fill_card.feedback, "int()"), True)
+
+    # 题型统计要能报出来（check_data.py 和首页都靠它）
+    _by_type = store.stats()["by_type"]
+    check("题型统计包含三种题型", sorted(_by_type.keys()), ["choice", "fill", "judge"])
 
     # 6.4.1 回归：可点击容器里的文字不能设 selectable=True
     # Flutter 里可选文本会吞掉 tap 手势，点选项文字会没反应（踩过这个坑）。

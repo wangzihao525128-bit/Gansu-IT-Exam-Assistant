@@ -24,16 +24,31 @@ def main() -> int:
     info = store.stats()
     print(f"数据文件：{store.DATA_FILE}")
     print(f"合计：{info['modules']} 个模块 / {info['points']} 个知识点 / {info['questions']} 道练习题")
+    by_type = info.get("by_type") or {}
+    if by_type:
+        # 真卷是「单选 25 + 判断 5 + 填空 5」，所以题型分布值得单独报一行。
+        labels = {"choice": "单选", "judge": "判断", "fill": "填空"}
+        print("      按题型：" + " / ".join(
+            f"{labels.get(name, name)} {count}" for name, count in by_type.items()
+        ))
     print("-" * 56)
     for module in modules:
         print(f"[{module['id']}] {module['name']}  color={module['color']}")
         for point in module.get("points", []):
             code_lines = len(point.get("code_example", "").splitlines())
             hints = len(point.get("hints") or {})
-            questions = len(point.get("questions", []))
+            questions = point.get("questions", [])
+            kinds = {}
+            for item in questions:
+                key = str(item.get("type", "choice") or "choice").lower()
+                kinds[key] = kinds.get(key, 0) + 1
+            kinds_text = "".join(
+                f"{labels.get(name, name)}{count} " for name, count in sorted(kinds.items())
+            ).strip()
             print(
                 f"    - {point['id']} {point['title']}"
-                f"  |  代码 {code_lines} 行 / 提示 {hints} 条 / 练习 {questions} 道"
+                f"  |  代码 {code_lines} 行 / 提示 {hints} 条 / 练习 {len(questions)} 道"
+                + (f"（{kinds_text}）" if kinds_text else "")
             )
     print("-" * 56)
     problems = store.validate()

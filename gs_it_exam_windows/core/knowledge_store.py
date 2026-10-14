@@ -4,7 +4,8 @@
 它是「资料」文件夹中《甘肃省信息技术会考学习软件-知识点数据.json》的原样拷贝，
 本模块所有字段都按该文件的真实结构编写，不臆造字段。
 
-真实结构（已核对：5 个模块 / 11 个知识点 / 15 道练习题）::
+真实结构（早期是 5 个模块 / 11 个知识点 / 15 道单选题；
+现在扩到 6 个模块 / 27 个知识点 / 130 道题，并支持三种题型）::
 
     {
       "modules": [
@@ -27,6 +28,19 @@
                   "options": ["A. 数据就是信息", "B. 数据是记录下来的可以被鉴别的符号"],
                   "answer": "B",
                   "explanation": "答案解析"
+                },
+                {
+                  "type": "judge",
+                  "question": "信息必须依附在某种载体上。（ ）",
+                  "answer": "A",
+                  "explanation": "这是载体依附性。A = 正确，B = 错误"
+                },
+                {
+                  "type": "fill",
+                  "question": "二进制数 1101 转换成十进制数是 ____ 。",
+                  "answer": "13",
+                  "accept": ["13"],
+                  "explanation": "答案解析"
                 }
               ]
             }
@@ -35,9 +49,12 @@
       ]
     }
 
-两个容易踩坑的地方：
-1. questions[].answer 存的是选项字母（"B"），不是选项下标；
-2. options 里的每一项已经自带 "A. " 这样的序号前缀。
+几个容易踩坑的地方：
+1. questions[].answer 在单选 / 判断里存的是选项字母（"B"），不是选项下标；
+2. options 里的每一项已经自带 "A. " 这样的序号前缀；
+3. **判断题不用写 options**，由 question_options() 补成「A. 正确 / B. 错误」；
+4. **填空题不能有 options**，answer 是标准答案字符串；
+5. 不写 type 的题一律按 choice 处理，所以老数据不用动。
 """
 
 from __future__ import annotations
@@ -73,6 +90,89 @@ DATA_FILE = data_file()
 
 POINT_KEYS = ("id", "title", "content", "code_example", "code_explanation", "hints", "questions")
 QUESTION_KEYS = ("type", "question", "options", "answer", "explanation")
+
+# ── 题型 ───────────────────────────────────────────────────────────────
+# 2023 卷面结构是「单选 25 题 + 判断 5 题 + 填空 5 题 + 操作题 + 综合题」，
+# 所以题库需要三种可自动判分的题型：
+#
+#   choice  单选：options 里选一个，answer 是选项字母
+#   judge   判断：数据里**不用写 options**，程序补成「A. 正确 / B. 错误」，
+#                 answer 是 "A"（正确）或 "B"（错误）
+#   fill    填空：**没有 options**，answer 是标准答案字符串，
+#                 另可用 accept 列出其它等价写法
+#
+# 历史数据里一道题都只有 choice，type 字段虽然一直存在但代码从没读过——
+# 所以这里必须做到：**不写 type 的题一律按 choice 处理**，老 JSON 不用动。
+QUESTION_TYPES = ("choice", "judge", "fill")
+# 三种题型都必须有的字段。options 只有 choice 需要，所以不放进这个公共列表。
+QUESTION_BASE_KEYS = ("type", "question", "answer", "explanation")
+# 判断题的默认选项。数据里写了 options 就用数据里的，方便改成「对 / 错」这类措辞。
+JUDGE_DEFAULT_OPTIONS = ("A. 正确", "B. 错误")
+
+
+def question_type(question: dict[str, Any]) -> str:
+    """取题型。没写 type、或写了不认识的类型，都按 ``choice`` 处理。
+
+    **故意不抛异常**：题库 JSON 是给老师用记事本改的，打错一个字母
+    不应该让整个详情页崩掉，退化成选择题至少还能答。
+    """
+    value = str(question.get("type", "") or "").strip().lower()
+    return value if value in QUESTION_TYPES else "choice"
+
+
+def question_options(question: dict[str, Any]) -> list[str]:
+    """题目实际用于渲染的选项列表。
+
+    判断题允许数据里不写 options —— 这里补上「A. 正确 / B. 错误」。
+    其它题型原样返回（可能是空表，比如填空题）。
+    """
+    options = [str(item) for item in (question.get("options") or [])]
+    if not options and question_type(question) == "judge":
+        return list(JUDGE_DEFAULT_OPTIONS)
+    return options
+
+
+# 全角 → 半角。中文输入法下打出的「ａ＝１」要能和「a=1」对上。
+_FULLWIDTH = {chr(0xFF01 + i): chr(0x21 + i) for i in range(94)}
+_FULLWIDTH["\u3000"] = " "
+
+
+def normalize_fill(text: Any) -> str:
+    """填空题答案的归一化，让学生「写对了但格式不一样」也算对。
+
+    依次做四件事：
+
+    1. **全角转半角** —— 中文输入法下 `ａ＝１` 要能对上 `a=1`；
+    2. **去掉所有空白** —— `x = 1` 与 `x=1` 视为相同；
+    3. **转小写** —— Python 区分大小写，但这是教学工具，把 `input`
+       写成 `Input` 不该被判错（标准答案在解析里给出）。
+
+    取舍说明：这样一来 `True` 和 `true` 都算对。这是**有意**的——
+    填空题考的是「知不知道该填什么」，不是「记不记得住大小写」。
+    如果某道题确实要区分大小写，就别用 fill，改用 choice。
+    """
+    if text is None:
+        return ""
+    chars = []
+    for ch in str(text):
+        ch = _FULLWIDTH.get(ch, ch)
+        if ch.isspace():
+            continue
+        chars.append(ch)
+    return "".join(chars).strip().lower()
+
+
+def accepted_fill_answers(question: dict[str, Any]) -> list[str]:
+    """一道填空题所有可接受的答案（标准答案 + accept 里列的等价写法）。
+
+    返回的每一项都已过 :func:`normalize_fill`，可以直接和归一化后的作答比对。
+    """
+    raw: list[Any] = [question.get("answer", "")]
+    extra = question.get("accept")
+    if isinstance(extra, (list, tuple)):
+        raw.extend(extra)
+    normalized = [normalize_fill(item) for item in raw]
+    return [item for item in normalized if item]
 
 _lock = threading.Lock()
 # _modules_cache 只放官方 JSON 里的模块，永远不被插件污染；
@@ -159,13 +259,39 @@ def _check_modules(modules: list[dict[str, Any]], problems: list[str], tag: str 
                     problems.append(f"{head}知识点 {pid} 缺少字段 {key}")
             for index, question in enumerate(point.get("questions", []), start=1):
                 label = f"{head}知识点 {pid} 第 {index} 题"
-                for key in QUESTION_KEYS:
+                # 公共字段三种题型都要。options 不在这里——填空题没有选项。
+                for key in QUESTION_BASE_KEYS:
                     if key not in question:
                         problems.append(f"{label} 缺少字段 {key}")
-                letters = [split_option(option)[0] for option in question.get("options", [])]
-                answer = str(question.get("answer", "")).strip().upper()
-                if letters and answer not in letters:
-                    problems.append(f"{label} 的答案 {answer!r} 不在选项字母 {letters} 中")
+                qtype = question_type(question)
+                if qtype != str(question.get("type", "") or "").strip().lower():
+                    problems.append(
+                        f"{label} 的题型 {question.get('type')!r} 不认识，"
+                        f"只支持 {list(QUESTION_TYPES)}（会按选择题渲染）"
+                    )
+                if qtype == "fill":
+                    # 填空题：必须有非空标准答案，且**不能有选项**（有选项就该用选择题）。
+                    if not str(question.get("answer", "") or "").strip():
+                        problems.append(f"{label} 是填空题但没有填 answer")
+                    if question.get("options"):
+                        problems.append(f"{label} 是填空题，不该有 options")
+                    extra = question.get("accept")
+                    if extra is not None and not isinstance(extra, (list, tuple)):
+                        problems.append(f"{label} 的 accept 必须是数组")
+                else:
+                    # 选择题 / 判断题：答案必须是某个选项的字母。
+                    options = question_options(question)
+                    letters = [split_option(option)[0] for option in options]
+                    letters = [letter for letter in letters if letter]
+                    answer = str(question.get("answer", "")).strip().upper()
+                    if len(options) < 2:
+                        problems.append(f"{label} 是 {qtype} 题，至少要有 2 个选项")
+                    elif len(letters) != len(options):
+                        problems.append(
+                            f"{label} 有选项没写字母前缀（要写成 \"A. 选项内容\" 这种）"
+                        )
+                    elif answer not in letters:
+                        problems.append(f"{label} 的答案 {answer!r} 不在选项字母 {letters} 中")
 
 
 def validate(data: dict[str, Any] | None = None) -> list[str]:
@@ -258,9 +384,16 @@ def search(keyword: str) -> list[dict[str, Any]]:
 
 
 def answer_text(question: dict[str, Any]) -> str:
-    """返回正确答案对应的选项文本（去掉 'B. ' 这类前缀）。"""
+    """返回正确答案的**展示文本**（去掉 'B. ' 这类前缀）。
+
+    - 单选题 / 判断题：返回选项正文（判断题没写 options 时返回「正确」或「错误」）；
+    - 填空题：返回标准答案本身。
+    """
+    qtype = question_type(question)
+    if qtype == "fill":
+        return str(question.get("answer", "") or "").strip()
     answer = str(question.get("answer", "")).strip().upper()
-    for option in question.get("options", []):
+    for option in question_options(question):
         letter, text = split_option(option)
         if letter == answer:
             return text
@@ -268,11 +401,22 @@ def answer_text(question: dict[str, Any]) -> str:
 
 
 def check_answer(question: dict[str, Any], user_answer: str) -> bool:
-    """判分；用户传字母或整段选项文本都可以。"""
-    answer = str(question.get("answer", "")).strip().upper()
+    """判分。三种题型共用这一个入口，别在界面层再写一遍规则。
+
+    - ``choice`` / ``judge``：用户传字母或整段选项文本都可以；
+    - ``fill``：用户传填写的文本，按 :func:`normalize_fill` 归一化后
+      和标准答案（以及 ``accept`` 里列的等价写法）比对。
+    """
+    qtype = question_type(question)
     user = str(user_answer or "").strip()
     if not user:
         return False
+
+    if qtype == "fill":
+        normalized = normalize_fill(user)
+        return bool(normalized) and normalized in accepted_fill_answers(question)
+
+    answer = str(question.get("answer", "")).strip().upper()
     letter, text = split_option(user)
     if letter and letter.upper() == answer:
         return True
@@ -310,10 +454,14 @@ def stats() -> dict[str, Any]:
     modules = load()
     points = [point for module in modules for point in module.get("points", [])]
     questions = [question for point in points for question in point.get("questions", [])]
+    by_type = {name: 0 for name in QUESTION_TYPES}
+    for question in questions:
+        by_type[question_type(question)] += 1
     return {
         "modules": len(modules),
         "points": len(points),
         "questions": len(questions),
+        "by_type": by_type,
         "detail": [
             {
                 "id": module.get("id"),

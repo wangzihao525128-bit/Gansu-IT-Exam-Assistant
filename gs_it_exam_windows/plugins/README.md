@@ -81,12 +81,36 @@ def startup(page):
 | --- | --- |
 | 模块 | `id` `name` `color` `points` |
 | 知识点 | `id` `title` `content` `code_example` `code_explanation` `hints` `questions` |
-| 练习题 | `type` `question` `options` `answer` `explanation` |
+| 练习题（公共） | `type` `question` `answer` `explanation` |
+| 练习题（单选） | 另需 `options`；`answer` 是选项字母 |
+| 练习题（判断） | **不用写 `options`**（程序补成「A. 正确 / B. 错误」）；`answer` 是 `"A"`（正确）或 `"B"`（错误） |
+| 练习题（填空） | **不能有 `options`**；`answer` 是标准答案字符串，可选 `accept` 数组列其它等价写法 |
+
+三种题型的例子：
+
+```python
+# 单选
+{"type": "choice", "question": "……（ ）",
+ "options": ["A. 甲", "B. 乙"], "answer": "B", "explanation": "解析"}
+
+# 判断：A = 正确，B = 错误
+{"type": "judge", "question": "……（ ）",
+ "answer": "A", "explanation": "解析"}
+
+# 填空：accept 里的写法判分时都算对
+{"type": "fill", "question": "…… 是 ____ 。",
+ "answer": "int", "accept": ["int()"], "explanation": "解析"}
+```
 
 补充说明：
 
-* `questions[].answer` 填**选项字母**（`"B"`），不是下标；
+* **不写 `type` 的题一律按单选处理** —— 历史题库里只有选择题，不用改；
+* 单选 / 判断的 `answer` 填**选项字母**（`"B"`），不是下标；
 * `options` 每一项要**自带序号前缀**，写成 `"B. 数据是……"`；
+* **填空题的判分前会做归一化**（`core.knowledge_store.normalize_fill`）：
+  全角转半角、去掉所有空格、转小写。所以 `ＩＮＴ（）`、`int ()`、`INT` 都算对。
+  这是有意的取舍 —— 填空题考「知不知道填什么」，不是「记不记得大小写」。
+  确实要区分大小写的题，请改用单选；
 * 知识点里代码用到了 `input()` 的话，额外给一个 `sample_input`，
   编辑器才会多出「标准输入」那一行，否则学生在界面上没法喂数据。
   **多行输入用换行符 `\n` 分隔**（JSON 里写成 `"85\n8\n2024"`）。
