@@ -340,8 +340,9 @@ def main_test() -> int:
         int((761 - ce.OUTER_CHROME_PX) * right_share),
     )
 
-    # 回归：教材示例里有三段用了 input()（2_2 / 2_3 / 2_5）。以前界面上根本没有
-    # 地方敲数据，学生点「运行代码」只会拿到一段 ValueError 报错，看不出代码错在哪。
+    # 回归：教材示例里有若干段用了 input()（早期是 2_2 / 2_3 / 2_5 三段，
+    # 后来模块六的真题精讲又补了 7 段）。以前界面上根本没有地方敲数据，
+    # 学生点「运行代码」只会拿到一段 ValueError 报错，看不出代码错在哪。
     # 现在：用到 input() 的知识点都配了 sample_input，编辑器多一行「标准输入」，
     # 并且这一行的高度算进了右栏预算，不会把运行结果挤出卡片。
     input_points = [
@@ -350,7 +351,12 @@ def main_test() -> int:
         for p in m.get("points", [])
         if "input(" in str(p.get("code_example", ""))
     ]
-    check("题库里有需要键盘输入的示例", len(input_points), 3)
+    # 这里断言的是「**至少**有 3 个」而不是「恰好等于 3」。
+    # 原来写死等于 3，题库一加内容（比如模块六那 7 道真题）就会误报失败——
+    # 那属于测试自身太脆，不是数据错了。真正要守的是下面那条一致性检查：
+    # **每个用到 input() 的知识点都必须配 sample_input**，少一个才算真问题。
+    check("题库里有需要键盘输入的示例（≥3 个，保证标准输入这条路径有覆盖）",
+          len(input_points) >= 3, True)
     check(
         "用到 input() 的示例都配了 sample_input",
         [p["id"] for p in input_points if not str(p.get("sample_input", "")).strip()],
