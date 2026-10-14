@@ -337,14 +337,20 @@ def quiz_stat(point_id: str) -> dict[str, int]:
 def module_stat(module: dict) -> dict[str, int]:
     """一个模块的答题汇总：总题数 / 已答 / 答对 / 练过的知识点数。
 
-    给 :mod:`ui.progress_panel` 用。``module`` 直接传 knowledge_store 里的模块 dict，
-    这里不去 import knowledge_store，是为了不跟数据层互相依赖。
+    给 :mod:`ui.progress_panel` 用。``module`` 直接传 knowledge_store 里的模块 dict。
+
+    本模块顶部刻意不 import 数据层（不跟它互相依赖），所以这里用**函数内延迟 import**：
+    既保持模块级没有依赖，又让「综合题怎么摊平成小题」这条规则**只有一处定义**
+    （:func:`core.knowledge_store.answerable_questions`）。
+    综合题自己不占答题位，不摊平的话模块总题数会少算。
     """
+    from core import knowledge_store as store  # 延迟导入：避免模块级依赖
+
     points = module.get("points", []) if isinstance(module, dict) else []
     total = answered = correct = touched = 0
     for point in points:
         questions = point.get("questions", []) or []
-        total += len(questions)
+        total += len(store.answerable_questions(questions))
         stat = quiz_stat(str(point.get("id", "")))
         answered += stat["answered"]
         correct += stat["correct"]

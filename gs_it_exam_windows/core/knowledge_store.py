@@ -41,6 +41,16 @@
                   "answer": "13",
                   "accept": ["13"],
                   "explanation": "答案解析"
+                },
+                {
+                  "type": "case",
+                  "question": "某公司的内部网络拓扑如下：……（案例背景材料）",
+                  "explanation": "本题综合考查网络设备与协议",
+                  "questions": [
+                    {"type": "choice", "question": "防火墙的作用是（ ）",
+                     "options": ["A. 监控过滤流量", "B. 测温"],
+                     "answer": "A", "explanation": "答案解析"}
+                  ]
                 }
               ]
             }
@@ -54,7 +64,9 @@
 2. options 里的每一项已经自带 "A. " 这样的序号前缀；
 3. **判断题不用写 options**，由 question_options() 补成「A. 正确 / B. 错误」；
 4. **填空题不能有 options**，answer 是标准答案字符串；
-5. 不写 type 的题一律按 choice 处理，所以老数据不用动。
+5. **综合题没有自己的 answer**，答案都在子题里；它也不占答题位，
+   统计时用 answerable_questions() 摊平到小题；
+6. 不写 type 的题一律按 choice 处理，所以老数据不用动。
 """
 
 from __future__ import annotations
@@ -70,7 +82,7 @@ BUNDLED_DATA = Path(__file__).resolve().parent.parent / "data" / "knowledge_poin
 
 
 def data_file() -> Path:
-    """找知识点数据文件，优先用程序旁边的 data\ 目录（老师可直接改 JSON 换题库）。
+    r"""找知识点数据文件，优先用程序旁边的 data\ 目录（老师可直接改 JSON 换题库）。
 
     1. ``<程序目录>/data/knowledge_points.json`` —— 打包后 exe 旁边那份，可编辑；
     2. PyInstaller 打进包里的 ``_MEIPASS/data/...`` —— 只读的兜底副本。
@@ -93,19 +105,29 @@ QUESTION_KEYS = ("type", "question", "options", "answer", "explanation")
 
 # ── 题型 ───────────────────────────────────────────────────────────────
 # 2023 卷面结构是「单选 25 题 + 判断 5 题 + 填空 5 题 + 操作题 + 综合题」，
-# 所以题库需要三种可自动判分的题型：
+# 所以题库需要四种题型：
 #
 #   choice  单选：options 里选一个，answer 是选项字母
 #   judge   判断：数据里**不用写 options**，程序补成「A. 正确 / B. 错误」，
 #                 answer 是 "A"（正确）或 "B"（错误）
 #   fill    填空：**没有 options**，answer 是标准答案字符串，
 #                 另可用 accept 列出其它等价写法
+#   case    综合题：**一个案例背景 + 一组小题**。
+#                 考纲原文写的是「5.综合题（10分）网络搭建或实际生活案例。
+#                 根据题目要求，解决相关实例中的问题，**其中有选择题或填空题或判断题**」——
+#                 所以它不是自由作答的开放题，而是「一段材料 + 若干小题」，
+#                 小题本身照样能自动判分。
+#                 数据结构：{"type":"case", "question":"案例背景", "questions":[子题…]}
+#                 子题只能是 choice / judge / fill，**不允许再嵌套 case**。
 #
 # 历史数据里一道题都只有 choice，type 字段虽然一直存在但代码从没读过——
 # 所以这里必须做到：**不写 type 的题一律按 choice 处理**，老 JSON 不用动。
-QUESTION_TYPES = ("choice", "judge", "fill")
-# 三种题型都必须有的字段。options 只有 choice 需要，所以不放进这个公共列表。
+QUESTION_TYPES = ("choice", "judge", "fill", "case")
+# 单个小题（choice / judge / fill）都必须有的字段。
+# options 只有 choice 需要，所以不放进这个公共列表。
 QUESTION_BASE_KEYS = ("type", "question", "answer", "explanation")
+# 综合题不一样：它**没有自己的 answer**（答案都在子题里），但必须有 questions。
+CASE_BASE_KEYS = ("type", "question", "questions", "explanation")
 # 判断题的默认选项。数据里写了 options 就用数据里的，方便改成「对 / 错」这类措辞。
 JUDGE_DEFAULT_OPTIONS = ("A. 正确", "B. 错误")
 
@@ -118,6 +140,42 @@ def question_type(question: dict[str, Any]) -> str:
     """
     value = str(question.get("type", "") or "").strip().lower()
     return value if value in QUESTION_TYPES else "choice"
+
+
+def sub_questions(question: dict[str, Any]) -> list[dict[str, Any]]:
+    """综合题的小题列表；不是综合题就返回空表。
+
+    调用方不用先判题型，直接拿这个函数的结果去遍历即可。
+    """
+    if question_type(question) != "case":
+        return []
+    items = question.get("questions")
+    if not isinstance(items, (list, tuple)):
+        return []
+    return [item for item in items if isinstance(item, dict)]
+
+
+def answerable_questions(questions: Any) -> list[dict[str, Any]]:
+    """把一组题**摊平**成「真正要作答的那些题」。
+
+    综合题自己不产生答题记录（它只是个容器），所以统计和渲染都要摊到小题上。
+    这样首页那句「已收录 N 道练习题」才是学生实际要答的题数，
+    不会因为把一道 4 小题的综合题算成 1 道而少算。
+
+    传进来的不是列表就返回空表 —— 题库是手改的，宽容一点。
+    """
+    if not isinstance(questions, (list, tuple)):
+        return []
+    flat: list[dict[str, Any]] = []
+    for item in questions:
+        if not isinstance(item, dict):
+            continue
+        subs = sub_questions(item)
+        if subs:
+            flat.extend(subs)
+        else:
+            flat.append(item)
+    return flat
 
 
 def question_options(question: dict[str, Any]) -> list[str]:
@@ -197,7 +255,7 @@ def _plugin_modules() -> list[dict[str, Any]]:
 
 
 def _merge_plugin_modules(base: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """把插件提供的模块接在官方模块后面。
+    r"""把插件提供的模块接在官方模块后面。
 
     一条硬规则：**插件只能加，不能改**。id 和官方模块撞车的插件模块直接丢掉，
     免得第三方插件把教材原题顶掉。学生看到的内容永远以 data\knowledge_points.json 为准。
@@ -241,6 +299,66 @@ def split_option(option: str) -> tuple[str, str]:
     return "", text
 
 
+def _check_question(question: dict[str, Any], label: str, problems: list[str]) -> None:
+    """检查一道题（含综合题的小题，递归）。所有题型规则只在这里写一遍。"""
+    if not isinstance(question, dict):
+        problems.append(f"{label} 不是一个对象")
+        return
+
+    qtype = question_type(question)
+    declared = str(question.get("type", "") or "").strip().lower()
+    if qtype != declared:
+        problems.append(
+            f"{label} 的题型 {question.get('type')!r} 不认识，"
+            f"只支持 {list(QUESTION_TYPES)}（会按选择题渲染）"
+        )
+
+    if qtype == "case":
+        for key in CASE_BASE_KEYS:
+            if key not in question:
+                problems.append(f"{label} 缺少字段 {key}")
+        items = question.get("questions")
+        if not isinstance(items, (list, tuple)) or not items:
+            problems.append(f"{label} 是综合题，但 questions 是空的（至少要有 1 道小题）")
+            return
+        for index, sub in enumerate(items, start=1):
+            sub_label = f"{label} 第 {index} 小题"
+            if question_type(sub) == "case":
+                # 嵌套综合题会让「摊平统计」和界面缩进都失去意义，明确禁止。
+                problems.append(f"{sub_label} 不允许再嵌套综合题")
+                continue
+            _check_question(sub, sub_label, problems)
+        return
+
+    # choice / judge / fill
+    for key in QUESTION_BASE_KEYS:
+        if key not in question:
+            problems.append(f"{label} 缺少字段 {key}")
+
+    if qtype == "fill":
+        # 填空题：必须有非空标准答案，且**不能有选项**（有选项就该用选择题）。
+        if not str(question.get("answer", "") or "").strip():
+            problems.append(f"{label} 是填空题但没有填 answer")
+        if question.get("options"):
+            problems.append(f"{label} 是填空题，不该有 options")
+        extra = question.get("accept")
+        if extra is not None and not isinstance(extra, (list, tuple)):
+            problems.append(f"{label} 的 accept 必须是数组")
+        return
+
+    # 选择题 / 判断题：答案必须是某个选项的字母。
+    options = question_options(question)
+    letters = [split_option(option)[0] for option in options]
+    letters = [letter for letter in letters if letter]
+    answer = str(question.get("answer", "")).strip().upper()
+    if len(options) < 2:
+        problems.append(f"{label} 是 {qtype} 题，至少要有 2 个选项")
+    elif len(letters) != len(options):
+        problems.append(f'{label} 有选项没写字母前缀（要写成 "A. 选项内容" 这种）')
+    elif answer not in letters:
+        problems.append(f"{label} 的答案 {answer!r} 不在选项字母 {letters} 中")
+
+
 def _check_modules(modules: list[dict[str, Any]], problems: list[str], tag: str = "") -> None:
     """逐个模块检查结构，把发现的问题追加进 problems。
 
@@ -258,40 +376,7 @@ def _check_modules(modules: list[dict[str, Any]], problems: list[str], tag: str 
                 if key not in point:
                     problems.append(f"{head}知识点 {pid} 缺少字段 {key}")
             for index, question in enumerate(point.get("questions", []), start=1):
-                label = f"{head}知识点 {pid} 第 {index} 题"
-                # 公共字段三种题型都要。options 不在这里——填空题没有选项。
-                for key in QUESTION_BASE_KEYS:
-                    if key not in question:
-                        problems.append(f"{label} 缺少字段 {key}")
-                qtype = question_type(question)
-                if qtype != str(question.get("type", "") or "").strip().lower():
-                    problems.append(
-                        f"{label} 的题型 {question.get('type')!r} 不认识，"
-                        f"只支持 {list(QUESTION_TYPES)}（会按选择题渲染）"
-                    )
-                if qtype == "fill":
-                    # 填空题：必须有非空标准答案，且**不能有选项**（有选项就该用选择题）。
-                    if not str(question.get("answer", "") or "").strip():
-                        problems.append(f"{label} 是填空题但没有填 answer")
-                    if question.get("options"):
-                        problems.append(f"{label} 是填空题，不该有 options")
-                    extra = question.get("accept")
-                    if extra is not None and not isinstance(extra, (list, tuple)):
-                        problems.append(f"{label} 的 accept 必须是数组")
-                else:
-                    # 选择题 / 判断题：答案必须是某个选项的字母。
-                    options = question_options(question)
-                    letters = [split_option(option)[0] for option in options]
-                    letters = [letter for letter in letters if letter]
-                    answer = str(question.get("answer", "")).strip().upper()
-                    if len(options) < 2:
-                        problems.append(f"{label} 是 {qtype} 题，至少要有 2 个选项")
-                    elif len(letters) != len(options):
-                        problems.append(
-                            f"{label} 有选项没写字母前缀（要写成 \"A. 选项内容\" 这种）"
-                        )
-                    elif answer not in letters:
-                        problems.append(f"{label} 的答案 {answer!r} 不在选项字母 {letters} 中")
+                _check_question(question, f"{head}知识点 {pid} 第 {index} 题", problems)
 
 
 def validate(data: dict[str, Any] | None = None) -> list[str]:
@@ -387,9 +472,12 @@ def answer_text(question: dict[str, Any]) -> str:
     """返回正确答案的**展示文本**（去掉 'B. ' 这类前缀）。
 
     - 单选题 / 判断题：返回选项正文（判断题没写 options 时返回「正确」或「错误」）；
-    - 填空题：返回标准答案本身。
+    - 填空题：返回标准答案本身；
+    - 综合题：没有自己的答案，返回「见各小题」。
     """
     qtype = question_type(question)
+    if qtype == "case":
+        return "见各小题"
     if qtype == "fill":
         return str(question.get("answer", "") or "").strip()
     answer = str(question.get("answer", "")).strip().upper()
@@ -401,13 +489,22 @@ def answer_text(question: dict[str, Any]) -> str:
 
 
 def check_answer(question: dict[str, Any], user_answer: str) -> bool:
-    """判分。三种题型共用这一个入口，别在界面层再写一遍规则。
+    """判分。三种小题（choice / judge / fill）共用这一个入口，别在界面层再写规则。
 
     - ``choice`` / ``judge``：用户传字母或整段选项文本都可以；
     - ``fill``：用户传填写的文本，按 :func:`normalize_fill` 归一化后
-      和标准答案（以及 ``accept`` 里列的等价写法）比对。
+      和标准答案（以及 ``accept`` 里列的等价写法）比对；
+    - ``case``：**综合题自己不判分**，永远返回 False。
+
+      综合题只是个容器，它的小题各自是一条独立的题，各自判各自的分
+      （界面会把它们渲染成独立卡片，每张卡片自己调用这个函数）。
+      这里返回 False 是为了让「万一有人误把 case 传进来」也不会判成对，
+      而不是表示「答错了」。
     """
     qtype = question_type(question)
+    if qtype == "case":
+        return False
+
     user = str(user_answer or "").strip()
     if not user:
         return False
@@ -453,14 +550,19 @@ def question_key(question: dict[str, Any], index: int = 0) -> str:
 def stats() -> dict[str, Any]:
     modules = load()
     points = [point for module in modules for point in module.get("points", [])]
-    questions = [question for point in points for question in point.get("questions", [])]
+    raw = [question for point in points for question in point.get("questions", [])]
+    # 综合题自己不占答题位，摊平到小题上再统计 ——
+    # 否则首页那句「已收录 N 道练习题」会把一道 4 小题的综合题只算 1 道。
+    answerable = answerable_questions(raw)
     by_type = {name: 0 for name in QUESTION_TYPES}
-    for question in questions:
+    for question in answerable:
         by_type[question_type(question)] += 1
+    cases = sum(1 for question in raw if question_type(question) == "case")
     return {
         "modules": len(modules),
         "points": len(points),
-        "questions": len(questions),
+        "questions": len(answerable),
+        "cases": cases,
         "by_type": by_type,
         "detail": [
             {

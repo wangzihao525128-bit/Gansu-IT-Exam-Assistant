@@ -1,6 +1,6 @@
 r"""练习题组件（需求文档 Step 7）。
 
-数据来自知识点 JSON 的 ``questions`` 字段。**三种题型**（见
+数据来自知识点 JSON 的 ``questions`` 字段。**四种题型**（见
 :data:`core.knowledge_store.QUESTION_TYPES`）：
 
     {"type": "choice", "question": "题干（ ）",
@@ -12,8 +12,13 @@ r"""练习题组件（需求文档 Step 7）。
     {"type": "fill", "question": "题干", "answer": "input",
      "accept": ["input()"], "explanation": "解析"}   # 没有选项，直接在输入框里填
 
+    {"type": "case", "question": "案例背景材料……", "explanation": "解析",
+     "questions": [子题1, 子题2, ...]}                # 综合题：一段材料 + 一组小题
+
 - ``choice`` / ``judge`` 走 :class:`QuizCard`：点选项 → 提交 → 展开解析；
 - ``fill`` 走 :class:`FillCard`：输入框里打字 → 提交 → 展开解析；
+- ``case`` **不生成自己的卡片**：:func:`build_quiz_list` 会把它摊平成
+  「一块案例背景横幅 + 若干张小题卡片」，小题各自判各自的分；
 - 不写 ``type`` 的题一律按 ``choice`` 处理（历史数据里只有选择题，不用改）。
 
 交互统一是三步：作答 → 点「提交」判分 → 自动展开正确答案和解析。
@@ -24,7 +29,7 @@ r"""练习题组件（需求文档 Step 7）。
 存档 key 也一律走 :func:`core.knowledge_store.question_key`——**不能拿题号当 key**，
 题库 JSON 一改题序，旧记录就会挂到别的题上（详见 question_key 的说明）。
 
-两个实现上的坑：
+三个实现上的坑：
 1. Flet 是按控件在树里的位置绑定点击回调的，**不要**在每次选中时把选项整排重建一遍——
    那样回调会错位，点「提交」会没反应。所以这里只在 :func:`QuizCard._build_options`
    里建一次控件，之后只改颜色和文字。
@@ -32,6 +37,8 @@ r"""练习题组件（需求文档 Step 7）。
    ``submitted`` / ``submit()`` / ``retry()`` / ``correct()`` / ``feedback``），
    这样 :func:`build_quiz_list` 的调用方和测试不用区分题型。
    差别只有：填空用 :meth:`FillCard.fill` 而不是 ``select()``，且 ``letters()`` 返回空表。
+3. 综合题的序号 / 总数 / 进度统计**一律按摊平后的小题算**，
+   否则会出现「已答 3 / 2 题」这种数不对的情况。
 """
 
 from __future__ import annotations
@@ -47,8 +54,11 @@ from ui import motion, theme
 LETTERS = "ABCDEFGH"
 _PREFIX = re.compile(r"^\s*([A-Z])\s*[.、)）]\s*")  # 去掉选项自带的 "A. " 前缀，字母改用徽章显示
 
-# 题型在界面上的名字。考试卷面就是这么分的（单选 25 题 / 判断 5 题 / 填空 5 题）。
-TYPE_LABELS = {"choice": "单选题", "judge": "判断题", "fill": "填空题"}
+# 题型在界面上的名字。考试卷面就是这么分的
+# （单选 25 题 / 判断 5 题 / 填空 5 题 / 综合题 10 分）。
+TYPE_LABELS = {"choice": "单选题", "judge": "判断题", "fill": "填空题", "case": "综合题"}
+# 综合题的强调色。单独一个颜色，让学生一眼看出「这一段是案例背景」。
+CASE_ACCENT = "#8E44AD"
 
 
 def type_label(question: dict) -> str:
@@ -56,14 +66,55 @@ def type_label(question: dict) -> str:
 
 
 def _type_chip(question: dict, colors) -> ft.Container:
-    """左上角那个题型小标签。判断题给个醒目的颜色，学生一眼看出不用选字母。"""
+    """左上角那个题型小标签。各题型给不同颜色，学生一眼看出该怎么作答。"""
     qtype = knowledge_store.question_type(question)
-    color = theme.WARNING if qtype == "judge" else (theme.SUCCESS if qtype == "fill" else theme.PRIMARY)
+    if qtype == "judge":
+        color = theme.WARNING
+    elif qtype == "fill":
+        color = theme.SUCCESS
+    elif qtype == "case":
+        color = CASE_ACCENT
+    else:
+        color = theme.PRIMARY
     return ft.Container(
         content=ft.Text(type_label(question), size=10, color="#FFFFFF"),
         bgcolor=color,
         border_radius=4,
         padding=ft.padding.symmetric(horizontal=6, vertical=2),
+    )
+
+
+def case_banner(case_question: dict, sub_count: int, colors) -> ft.Container:
+    """综合题的**案例背景横幅**。
+
+    它本身不是一道题、不产生答题记录，只是把「这段材料」放在它那组小题前面。
+    颜色比普通卡片重一点，让材料和题目在视觉上分成两层。
+    """
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        ft.Container(
+                            content=ft.Text("综合题", size=10, color="#FFFFFF"),
+                            bgcolor=CASE_ACCENT,
+                            border_radius=4,
+                            padding=ft.padding.symmetric(horizontal=6, vertical=2),
+                        ),
+                        ft.Text(f"案例背景 · 共 {sub_count} 小题", size=11, color=colors["sub"]),
+                    ],
+                    spacing=8,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+                _stem(str(case_question.get("question", ""))),
+            ],
+            spacing=8,
+            tight=True,
+        ),
+        bgcolor=colors["card"],
+        border=ft.border.all(2, CASE_ACCENT),
+        border_radius=theme.RADIUS,
+        padding=14,
     )
 
 
@@ -582,6 +633,7 @@ def make_card(
     """按题型挑卡片类。填空题走 :class:`FillCard`，其余（单选 / 判断）走 :class:`QuizCard`。
 
     单独抽出来是因为测试也要按同一规则造卡片，规则只能有一处。
+    **综合题不会走到这里** —— 它在 :func:`build_quiz_list` 里就被摊平成小题了。
     """
     if knowledge_store.question_type(question) == "fill":
         return FillCard(page, question, index, total, point_id, colors, on_progress=on_progress)
@@ -603,12 +655,20 @@ def build_quiz_list(
     返回值统一带 ``.cards`` 属性（没有题时是空表），调用方不用先判空。
     """
     c = colors or theme.colors()
-    if not questions:
-        # 这里必须用 Container 包一层：flet 0.23 的 ft.Column **不收** bgcolor /
-        # border / border_radius / padding（会直接 TypeError: unexpected keyword
-        # argument），卡片样式只能挂在 Container 上。之前一直没炸，纯粹是因为
-        # 题库里 11 个知识点都配了题；下一步要重写题库 JSON，一旦有知识点没题，
-        # 详情页就会在构建时整个崩掉。
+
+    # 把题目摊平：综合题自己不是「一道要作答的题」，它的小题才是。
+    # 摊平之后，序号、总数、进度统计全都按**真正要答的题**算，
+    # 不会出现「已答 3 / 2 题」这种数不对的情况。
+    plan: list[tuple[dict, dict | None]] = []
+    for item in questions or []:
+        subs = knowledge_store.sub_questions(item)
+        if subs:
+            plan.extend((sub, item) for sub in subs)
+        else:
+            plan.append((item, None))
+
+    if not plan:
+        # 一组题全是空的综合题（questions 里没有小题）时也要给个说法，别白屏。
         empty = ft.Container(
             content=ft.Column(
                 [ft.Text("这个知识点暂时没有练习题。", size=12, color=c["sub"])],
@@ -620,9 +680,10 @@ def build_quiz_list(
             border_radius=theme.RADIUS,
             padding=14,
         )
-        empty.cards = []  # 与下面那份保持一致，调用方不必先判空再取 .cards
+        empty.cards = []
         return empty
 
+    total = len(plan)
     holder = ft.Column(spacing=theme.GAP, tight=True)
     progress = ft.Text("", size=12, color=c["sub"])
 
@@ -631,11 +692,11 @@ def build_quiz_list(
         # 夹一道：老存档是按题号存 key 的（见 knowledge_store.question_key），
         # 题库改过题序之后存档里会剩下对不上号的旧 key，被统计算进来就会印出
         # 「已答 5 / 2 题」这种比题目总数还大的数字。旧 key 不影响使用，只是别让它露馅。
-        answered = min(stat["answered"], len(questions))
+        answered = min(stat["answered"], total)
         # 答对数也要夹：旧 key 可能比对得上的还多，只夹「已答」会印出
         # 「已答 2 / 2 题 · 答对 3 题」这种比题目总数还大的答对数。
         correct = min(stat["correct"], answered)
-        progress.value = f"已答 {answered} / {len(questions)} 题 · 答对 {correct} 题"
+        progress.value = f"已答 {answered} / {total} 题 · 答对 {correct} 题"
         update = getattr(page, "update", None)  # 光改 value 不会重画，必须显式刷新
         if callable(update):
             try:
@@ -648,15 +709,28 @@ def build_quiz_list(
             except Exception:
                 pass
 
-    cards = [
-        make_card(page, question, i, len(questions), point_id, c, refresh)
-        for i, question in enumerate(questions)
-    ]
+    cards: list[Any] = []
+    banners: list[ft.Container] = []
+    controls: list[ft.Control] = []
+    last_case: dict | None = None
+    for i, (question, case) in enumerate(plan):
+        # 同一个综合题的小题是连续的，只在**第一次**遇到它时插一次背景横幅。
+        # 用 is 比较身份而不是 ==：两道内容相同的案例也该各插各的横幅。
+        if case is not None and case is not last_case:
+            banner = case_banner(case, len(knowledge_store.sub_questions(case)), c)
+            banners.append(banner)
+            controls.append(banner)
+        last_case = case
+        card = make_card(page, question, i, total, point_id, c, refresh)
+        cards.append(card)
+        controls.append(card.control)
+
     refresh()
     holder.controls = [
         ft.Text("练习题", size=14, weight=ft.FontWeight.BOLD, color=c["text"]),
         progress,
-        *[card.control for card in cards],
+        *controls,
     ]
     holder.cards = cards  # 冒烟测试要拿到每一张卡片来模拟作答
+    holder.cases = banners  # 综合题的案例横幅，测试单独断言
     return holder

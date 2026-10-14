@@ -81,12 +81,13 @@ def startup(page):
 | --- | --- |
 | 模块 | `id` `name` `color` `points` |
 | 知识点 | `id` `title` `content` `code_example` `code_explanation` `hints` `questions` |
-| 练习题（公共） | `type` `question` `answer` `explanation` |
-| 练习题（单选） | 另需 `options`；`answer` 是选项字母 |
-| 练习题（判断） | **不用写 `options`**（程序补成「A. 正确 / B. 错误」）；`answer` 是 `"A"`（正确）或 `"B"`（错误） |
-| 练习题（填空） | **不能有 `options`**；`answer` 是标准答案字符串，可选 `accept` 数组列其它等价写法 |
+| 练习题·公共 | `type` `question` `answer` `explanation` |
+| 练习题·单选 | 另需 `options`；`answer` 是选项字母 |
+| 练习题·判断 | **不用写 `options`**（程序补成「A. 正确 / B. 错误」）；`answer` 是 `"A"`（正确）或 `"B"`（错误） |
+| 练习题·填空 | **不能有 `options`**；`answer` 是标准答案字符串，可选 `accept` 数组列其它等价写法 |
+| 练习题·综合题 | **没有 `answer`**；`question` 放案例背景，另需 `questions` 数组放一组小题（小题只能是单选/判断/填空） |
 
-三种题型的例子：
+四种题型的例子：
 
 ```python
 # 单选
@@ -100,6 +101,16 @@ def startup(page):
 # 填空：accept 里的写法判分时都算对
 {"type": "fill", "question": "…… 是 ____ 。",
  "answer": "int", "accept": ["int()"], "explanation": "解析"}
+
+# 综合题：一段案例材料 + 一组小题（真卷的第五大题就是这种形式）
+{"type": "case", "question": "某公司的内部网络拓扑如下：……",
+ "explanation": "本题综合考查……",
+ "questions": [
+     {"type": "choice", "question": "防火墙的作用是（ ）",
+      "options": ["A. 监控过滤流量", "B. 测温"], "answer": "A", "explanation": "…"},
+     {"type": "fill", "question": "把域名翻译成 IP 的是 ____ 。",
+      "answer": "DNS", "explanation": "…"},
+ ]}
 ```
 
 补充说明：
@@ -111,6 +122,9 @@ def startup(page):
   全角转半角、去掉所有空格、转小写。所以 `ＩＮＴ（）`、`int ()`、`INT` 都算对。
   这是有意的取舍 —— 填空题考「知不知道填什么」，不是「记不记得大小写」。
   确实要区分大小写的题，请改用单选；
+* **综合题自己不占答题位**：统计和界面上都会把它摊平成小题
+  （`core.knowledge_store.answerable_questions`），
+  一道 4 小题的综合题算 4 道题。**小题不允许再嵌套综合题**，校验会挡下；
 * 知识点里代码用到了 `input()` 的话，额外给一个 `sample_input`，
   编辑器才会多出「标准输入」那一行，否则学生在界面上没法喂数据。
   **多行输入用换行符 `\n` 分隔**（JSON 里写成 `"85\n8\n2024"`）。

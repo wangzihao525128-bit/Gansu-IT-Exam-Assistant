@@ -48,7 +48,7 @@ def back_button(page: ft.Page, label: str = "返回首页") -> ft.Container:
 def _point_card(page: ft.Page, module: dict, point: dict) -> ft.Container:
     c = theme.colors()
     color = module.get("color", theme.PRIMARY)
-    questions = len(point.get("questions", []))
+    questions = len(store.answerable_questions(point.get("questions", [])))
     hints = len(point.get("hints") or {})
     code_lines = len(point.get("code_example", "").splitlines())
     preview = _preview(point.get("content", ""))
@@ -169,7 +169,9 @@ def build_module_page(page: ft.Page, module_id: str) -> None:
         return
 
     points = module.get("points", [])
-    question_count = sum(len(point.get("questions", [])) for point in points)
+    question_count = sum(
+        len(store.answerable_questions(point.get("questions", []))) for point in points
+    )
     color = module.get("color", theme.PRIMARY)
 
     header = ft.Container(

@@ -187,8 +187,18 @@ def expand_ratios(control) -> list:
 
 
 def any_text_contains_on(control, needle: str) -> bool:
-    """某个控件的子树里有没有包含指定文字的文本控件。"""
-    return any(needle in str(c.value) for c, _ in walk(control) if isinstance(c, ft.Text))
+    """某个控件的子树里有没有包含指定文字的文本控件。
+
+    **也认 ft.Markdown**：题干、解析、综合题的案例背景都是用 Markdown 渲染的，
+    只查 ft.Text 会把它们全漏掉 ——
+    之前这里就是只查 ft.Text，导致「案例横幅里有背景材料」这条断言一直是 False。
+    """
+    for item, _ in walk(control):
+        if isinstance(item, ft.Text) and needle in str(item.value):
+            return True
+        if isinstance(item, ft.Markdown) and needle in str(getattr(item, "value", "")):
+            return True
+    return False
 
 
 def any_text_contains(page: FakePage, needle: str) -> bool:
@@ -513,7 +523,9 @@ def main_test() -> int:
     # 题库里现在混着三种题型，所以先挑出选择题来断言 —— 原来直接取 cards[0]/cards[1]，
     # 只要在知识点前面插一道填空题就会 AttributeError（FillCard 没有 select）。
     cards = page.data["quiz"].cards
-    check("练习题数量", len(cards), len(sample["questions"]))
+    # 卡片数是**摊平后**的题数（综合题摊成它的小题），所以要跟 answerable_questions 比，
+    # 不能跟 questions 的原始条数比 —— 否则知识点里一加综合题就会误报失败。
+    check("练习题数量", len(cards), len(store.answerable_questions(sample["questions"])))
     quiz_cards = [item for item in cards if isinstance(item, qc.QuizCard)]
     check("知识点里至少有一道选择题", len(quiz_cards) >= 1, True)
     card = quiz_cards[0]
@@ -611,9 +623,97 @@ def main_test() -> int:
     check("填空题列出其它可接受写法",
           any_text_contains_on(fill_card.feedback, "int()"), True)
 
+    # 6.4.4 综合题（case）：一段案例背景 + 一组小题。
+    # 真卷的「综合题（10分）」就是这种形式 —— 材料 + 若干选择/填空/判断小题。
+    case_q = {
+        "type": "case",
+        "question": "某公司内部网络拓扑：Internet -> 防火墙 -> 主交换机 -> 若干 PC。",
+        "explanation": "综合考查网络设备与协议。",
+        "questions": [
+            {"type": "choice", "question": "防火墙的主要作用是（ ）",
+             "options": ["A. 监控过滤网络流量", "B. 测量体温"],
+             "answer": "A", "explanation": "防火墙负责挡。"},
+            {"type": "judge", "question": "路由器负责连接不同的网络。（ ）",
+             "answer": "A", "explanation": "对。"},
+            {"type": "fill", "question": "把域名翻译成 IP 地址的服务是 ____ 。",
+             "answer": "DNS", "explanation": "DNS 是查号台。"},
+        ],
+    }
+    check("综合题题型标签", qc.type_label(case_q), "综合题")
+    check("综合题自己没有选项", store.question_options(case_q), [])
+    check("综合题自己不参与判分（恒为 False，它只是容器）",
+          store.check_answer(case_q, "A"), False)
+    check("能取出综合题的小题", len(store.sub_questions(case_q)), 3)
+
+    plain_q = {"type": "choice", "question": "普通题", "options": ["A. 甲", "B. 乙"],
+               "answer": "A", "explanation": "…"}
+    flat = store.answerable_questions([case_q, plain_q])
+    check("摊平后是 4 道可作答题（3 小题 + 1 普通题）", len(flat), 4)
+    check("摊平后不再含 case 本身",
+          [store.question_type(x) for x in flat].count("case"), 0)
+
+    built = qc.build_quiz_list(page, "", [case_q], c, None)
+    check("综合题渲染成 3 张小题卡片", len(built.cards), 3)
+    check("综合题插了 1 块案例横幅", len(built.cases), 1)
+    check("案例横幅里有背景材料", any_text_contains_on(built.cases[0], "某公司内部网络拓扑"), True)
+    check("案例横幅标注了小题数", any_text_contains_on(built.cases[0], "共 3 小题"), True)
+    check("案例横幅不是答题卡", isinstance(built.cases[0], qc.QuizCard), False)
+    check("进度总数按摊平后的小题算", any_text_contains_on(built, "已答 0 / 3 题"), True)
+    check("小题按题型分派卡片", [type(x).__name__ for x in built.cards],
+          ["QuizCard", "QuizCard", "FillCard"])
+
+    sub_choice = built.cards[0]
+    sub_choice.select("A")
+    sub_choice.submit()
+    check("综合题里的小题能独立作答判分", sub_choice.correct(), True)
+    sub_fill = built.cards[2]
+    sub_fill.fill("dns")          # 小写，靠归一化也该判对
+    sub_fill.submit()
+    check("综合题里的填空题也走归一化判分", sub_fill.correct(), True)
+
+    # 数据层校验：嵌套综合题 / 空小题都必须被挡下来
+    def _validate_one(question):
+        return store.validate({"modules": [{
+            "id": "m", "name": "n", "color": "#000",
+            "points": [{
+                "id": "p", "title": "t", "content": "c",
+                "code_example": "print(1)", "code_explanation": "e",
+                "hints": {}, "questions": [question],
+            }],
+        }]})
+
+    nested = {"type": "case", "question": "x", "explanation": "y",
+              "questions": [{"type": "case", "question": "z", "explanation": "w",
+                             "questions": [plain_q]}]}
+    check("嵌套综合题会被校验挡下",
+          any("不允许再嵌套综合题" in p for p in _validate_one(nested)), True)
+
+    no_sub = {"type": "case", "question": "x", "explanation": "y", "questions": []}
+    check("没有小题的综合题会被校验挡下",
+          any("questions 是空的" in p for p in _validate_one(no_sub)), True)
+
+    bad_sub = {"type": "case", "question": "x", "explanation": "y",
+               "questions": [{"type": "choice", "question": "q",
+                              "options": ["A. 甲", "B. 乙"], "answer": "C",
+                              "explanation": "e"}]}
+    check("综合题里小题答案越界也会被抓出来",
+          any("不在选项字母" in p for p in _validate_one(bad_sub)), True)
+
+    # 摊平规则只有一处定义（knowledge_store），local_store 通过延迟 import 复用它。
+    # 两处要是走岔了，首页/模块页的题数就会和详情页的进度对不上。
+    for _mid in ("module8", "module2"):
+        _mod = store.get_module(_mid)
+        if _mod is None:
+            continue
+        _expect = sum(len(store.answerable_questions(p.get("questions", [])))
+                      for p in _mod.get("points", []))
+        check(f"{_mid} 模块总题数与摊平规则一致",
+              local_store.module_stat(_mod)["total"], _expect)
+
     # 题型统计要能报出来（check_data.py 和首页都靠它）
     _by_type = store.stats()["by_type"]
-    check("题型统计包含三种题型", sorted(_by_type.keys()), ["choice", "fill", "judge"])
+    check("题型统计包含四种题型", sorted(_by_type.keys()), ["case", "choice", "fill", "judge"])
+    check("题型统计里 case 记 0（已摊平到小题）", _by_type["case"], 0)
 
     # 6.4.1 回归：可点击容器里的文字不能设 selectable=True
     # Flutter 里可选文本会吞掉 tap 手势，点选项文字会没反应（踩过这个坑）。

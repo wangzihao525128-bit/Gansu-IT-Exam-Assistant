@@ -464,7 +464,7 @@ class TestEmbeddedBackend(unittest.TestCase):
 
 
 class TestOnefileRuntimePath(unittest.TestCase):
-    """单文件版（PyInstaller --onefile）找内置 Python 的路径。
+    r"""单文件版（PyInstaller --onefile）找内置 Python 的路径。
 
     背景：单文件版把题库、图标、插件、内置 Python 全封进 exe，启动时解到
     ``sys._MEIPASS``（%TEMP%\_MEIxxxxxx）。而 ``app_dir()`` 指的是 exe 所在目录

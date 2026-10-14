@@ -14,7 +14,7 @@ from ui.module_page import module_route
 from ui.progress_panel import overall_panel
 
 GREETING = "把会考知识点，装进每天十分钟"
-SUBTITLE = "甘肃省信息技术学业水平考试 · 五大模块同步精讲"
+SUBTITLE = "甘肃省信息技术学业水平考试 · 教材七个模块同步精讲"
 TIPS = [
     "每天挑 1 个知识点：先读讲解，再改一遍示例代码，最后做练习题。",
     "代码一定要亲手改一行再运行，看到输出变了才算学会。",
@@ -38,7 +38,10 @@ def _filter_modules(keyword: str) -> list[dict]:
 def _module_card(page: ft.Page, module: dict, wide: bool) -> ft.Container:
     c = theme.colors()
     points = module.get("points", [])
-    question_count = sum(len(point.get("questions", [])) for point in points)
+    # 综合题自己不占答题位，摊平到小题上再数，否则卡片上的题数会少算。
+    question_count = sum(
+        len(knowledge_store.answerable_questions(point.get("questions", []))) for point in points
+    )
     titles = "、".join(point.get("title", "") for point in points[:3])
     if len(points) > 3:
         titles += " 等"
